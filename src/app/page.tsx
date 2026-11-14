@@ -1,29 +1,59 @@
+import { buildGuestInfo } from '@/lib/guest';
+import { getVisibleEvents, getInvitationConfig } from '@/lib/invitation';
+import { InvitationView } from '@/components/invitation/InvitationView';
 import Link from 'next/link';
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+interface HomePageProps {
+  searchParams: Promise<{ type?: string }>;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const { type } = await searchParams;
+
+  // Default guest for the homepage presentation experience
+  const guestInfo = buildGuestInfo('Guest', type);
+  const visibleEvents = getVisibleEvents(guestInfo.category);
+  const config = getInvitationConfig();
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-8">
-      <h1 className="text-3xl font-semibold tracking-tight">
-        26th January 2027 — Invitation System
-      </h1>
-      <p className="text-muted-foreground max-w-md text-center text-sm">
-        This is the architecture foundation. The actual invitation design will
-        be implemented in a later phase.
-      </p>
-      <div className="flex flex-col gap-3 sm:flex-row">
+    <div>
+      {/* Quick switcher bar for previewing both invitation tiers */}
+      <nav
+        aria-label="Preview category selector"
+        className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-white/80 backdrop-blur-md border border-neutral-200/80 px-3 py-1.5 rounded-full shadow-md text-xs font-mono"
+      >
+        <span className="text-neutral-400">Preview:</span>
         <Link
-          href="/demo?type=family"
-          className="rounded-md border px-4 py-2 text-sm transition-colors hover:bg-accent"
+          href="/?type=family"
+          className={`px-2.5 py-1 rounded-full transition-colors ${
+            guestInfo.category === 'family'
+              ? 'bg-neutral-900 text-white font-semibold'
+              : 'text-neutral-600 hover:bg-neutral-100'
+          }`}
         >
-          Preview: Family invitation (/demo?type=family)
+          Family
         </Link>
         <Link
-          href="/demo?type=general"
-          className="rounded-md border px-4 py-2 text-sm transition-colors hover:bg-accent"
+          href="/?type=general"
+          className={`px-2.5 py-1 rounded-full transition-colors ${
+            guestInfo.category === 'general'
+              ? 'bg-neutral-900 text-white font-semibold'
+              : 'text-neutral-600 hover:bg-neutral-100'
+          }`}
         >
-          Preview: General invitation (/demo?type=general)
+          General
         </Link>
-      </div>
-    </main>
+      </nav>
+
+      {/* The physical envelope and scroll opening experience */}
+      <InvitationView
+        guestInfo={guestInfo}
+        events={visibleEvents}
+        config={config}
+      />
+    </div>
   );
 }
+
