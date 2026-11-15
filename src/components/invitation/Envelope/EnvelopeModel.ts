@@ -8,6 +8,8 @@ export interface EnvelopeModelParts {
   interiorBack: THREE.Mesh;
   cardGroup: THREE.Group;
   cardMesh: THREE.Mesh;
+  cardBackMesh: THREE.Mesh;
+  cardRimMesh: THREE.Mesh;
   backPocketMesh: THREE.Mesh;
   topFlapHinge: THREE.Group;
   topFlapMesh: THREE.Mesh;
@@ -415,6 +417,8 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
     interiorBack,
     cardGroup,
     cardMesh,
+    cardBackMesh,
+    cardRimMesh,
     backPocketMesh,
     topFlapHinge,
     topFlapMesh,

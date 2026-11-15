@@ -278,8 +278,8 @@ export class EnvelopeScene {
 
       const targetFlapAngle = -Math.PI * 1.06;
       const targetFlapZ = -0.020;
-      const targetCardY = 1.82;
-      const targetCardZ = 0.022;
+      const targetCardY = 0.88;
+      const targetCardZ = 0.010;
 
       const tl = gsap.timeline({
         onComplete: () => {
@@ -335,18 +335,21 @@ export class EnvelopeScene {
         ease: 'power2.inOut',
       }, '<');
 
-      // Layering: flap goes behind once it crosses the top fold
+      // Layering: flap goes behind once it crosses the top fold, while card stays nestled inside pocket
       tl.add(() => {
         if (this.isOpen) {
           this.modelParts.topFlapMesh.renderOrder = 2; // Triangle flap in back layer
           if (this.modelParts.topFlapBackMesh) this.modelParts.topFlapBackMesh.renderOrder = 2;
           if (this.modelParts.topFlapEdgeMesh) this.modelParts.topFlapEdgeMesh.renderOrder = 2;
-          this.modelParts.cardMesh.renderOrder = 4;    // Paper card on top layer
-          this.modelParts.backPocketMesh.renderOrder = 5;
+          this.modelParts.cardMesh.renderOrder = 4;    // Paper card inside pocket
+          if (this.modelParts.cardBackMesh) this.modelParts.cardBackMesh.renderOrder = 4;
+          if (this.modelParts.cardRimMesh) this.modelParts.cardRimMesh.renderOrder = 4;
+          this.modelParts.backPocketMesh.renderOrder = 5; // Pocket front occludes lower part of card
         }
       }, '-=0.45');
 
-      // Phase 3: THEN AND ONLY THEN (after flap is fully opened), the paper card slides out!
+      // Phase 3: THEN AND ONLY THEN (after flap is fully opened), the paper card slides out partially,
+      // keeping its lower portion neatly tucked inside the envelope pocket!
       tl.to(this.modelParts.cardGroup.position, {
         y: targetCardY,
         z: targetCardZ,
@@ -354,9 +357,8 @@ export class EnvelopeScene {
         ease: 'power2.out',
       }, '+=0.08');
 
-      // Subtle 3D tilt as the card emerges to show its physical rim and catch specular light
       tl.to(this.modelParts.cardGroup.rotation, {
-        x: -0.04,
+        x: 0,
         duration: 1.15,
         ease: 'power2.out',
       }, '<');
@@ -407,6 +409,8 @@ export class EnvelopeScene {
           if (this.modelParts.topFlapEdgeMesh) this.modelParts.topFlapEdgeMesh.renderOrder = 5;
           this.modelParts.backPocketMesh.renderOrder = 4;
           this.modelParts.cardMesh.renderOrder = 3;
+          if (this.modelParts.cardBackMesh) this.modelParts.cardBackMesh.renderOrder = 3;
+          if (this.modelParts.cardRimMesh) this.modelParts.cardRimMesh.renderOrder = 3;
         },
       }, '<');
     }
