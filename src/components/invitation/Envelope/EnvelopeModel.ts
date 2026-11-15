@@ -172,6 +172,88 @@ function createFlapEdgeGeometry(w: number, tipY: number, thickness: number): THR
 }
 
 /**
+ * Creates a closed 3D rim wall around all 4 sides and rounded corners of the card,
+ * giving the card solid physical thickness.
+ */
+function createCardRimGeometry(w: number, h: number, depth: number, r: number, segments: number = 8): THREE.BufferGeometry {
+  const halfW = w / 2;
+  const halfH = h / 2;
+  const halfD = depth / 2;
+
+  const path: THREE.Vector2[] = [];
+
+  // 1. Top edge (left to right)
+  path.push(new THREE.Vector2(-halfW + r, halfH));
+  path.push(new THREE.Vector2(halfW - r, halfH));
+
+  // 2. Top-right arc (90 to 0 deg)
+  for (let i = 1; i <= segments; i++) {
+    const theta = (Math.PI / 2) * (1 - i / segments);
+    path.push(new THREE.Vector2(halfW - r + r * Math.cos(theta), halfH - r + r * Math.sin(theta)));
+  }
+
+  // 3. Right edge (top to bottom)
+  path.push(new THREE.Vector2(halfW, -halfH + r));
+
+  // 4. Bottom-right arc (0 to -90 deg)
+  for (let i = 1; i <= segments; i++) {
+    const theta = -(Math.PI / 2) * (i / segments);
+    path.push(new THREE.Vector2(halfW - r + r * Math.cos(theta), -halfH + r + r * Math.sin(theta)));
+  }
+
+  // 5. Bottom edge (right to left)
+  path.push(new THREE.Vector2(-halfW + r, -halfH));
+
+  // 6. Bottom-left arc (-90 to -180 deg)
+  for (let i = 1; i <= segments; i++) {
+    const theta = -Math.PI / 2 - (Math.PI / 2) * (i / segments);
+    path.push(new THREE.Vector2(-halfW + r + r * Math.cos(theta), -halfH + r + r * Math.sin(theta)));
+  }
+
+  // 7. Left edge (bottom to top)
+  path.push(new THREE.Vector2(-halfW, halfH - r));
+
+  // 8. Top-left arc (180 to 90 deg)
+  for (let i = 1; i <= segments; i++) {
+    const theta = Math.PI - (Math.PI / 2) * (i / segments);
+    path.push(new THREE.Vector2(-halfW + r + r * Math.cos(theta), halfH - r + r * Math.sin(theta)));
+  }
+
+  // Close loop
+  path.push(new THREE.Vector2(-halfW + r, halfH));
+
+  const vertices: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+
+  for (let i = 0; i < path.length; i++) {
+    const p = path[i];
+    vertices.push(p.x, p.y, -halfD);
+    uvs.push(i / (path.length - 1), 0);
+    vertices.push(p.x, p.y, +halfD);
+    uvs.push(i / (path.length - 1), 1);
+  }
+
+  for (let i = 0; i < path.length - 1; i++) {
+    const i0 = i * 2;
+    const i1 = i0 + 1;
+    const i2 = (i + 1) * 2;
+    const i3 = i2 + 1;
+
+    indices.push(i0, i1, i2);
+    indices.push(i1, i3, i2);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+
+  return geo;
+}
+
+/**
  * Accurately models the physical envelope matching both uploaded artworks:
  * - Subtle rounded corners on all edges.
  * - Solid physical thickness along all sides (rim wall).
@@ -272,43 +354,47 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   topFlapEdgeMesh.receiveShadow = true;
   topFlapHinge.add(topFlapEdgeMesh);
 
-  // 4. INNER INVITATION CARD: realistic thick stationery board with subtle rounded corners
+  // 4. INNER INVITATION CARD: realistic thick stationery board with Engagement Ceremony artwork
   const cardGroup = new THREE.Group();
   cardGroup.name = 'InnerCardGroup';
   cardGroup.position.set(0, 0, 0.005);
   root.add(cardGroup);
 
-  const cardW = width * 0.86;
-  const cardH = height * 0.96;
+  const cardW = 4.0;
+  const cardH = 3.0; // Exact 4:3 aspect ratio matching the 1024x768 engagement ceremony image
   const cardRadius = 0.04;
-  const cardShape = new THREE.Shape();
-  const cHalfW = cardW / 2;
-  const cHalfH = cardH / 2;
-  cardShape.moveTo(-cHalfW + cardRadius, -cHalfH);
-  cardShape.lineTo(cHalfW - cardRadius, -cHalfH);
-  cardShape.quadraticCurveTo(cHalfW, -cHalfH, cHalfW, -cHalfH + cardRadius);
-  cardShape.lineTo(cHalfW, cHalfH - cardRadius);
-  cardShape.quadraticCurveTo(cHalfW, cHalfH, cHalfW - cardRadius, cHalfH);
-  cardShape.lineTo(-cHalfW + cardRadius, cHalfH);
-  cardShape.quadraticCurveTo(-cHalfW, cHalfH, -cHalfW, cHalfH - cardRadius);
-  cardShape.lineTo(-cHalfW, -cHalfH + cardRadius);
-  cardShape.quadraticCurveTo(-cHalfW, -cHalfH, -cHalfW + cardRadius, -cHalfH);
+  const cardThickness = 0.008;
+  const halfCardT = cardThickness / 2;
 
-  const cardGeo = new THREE.ExtrudeGeometry(cardShape, {
-    depth: 0.008,
-    bevelEnabled: true,
-    bevelSegments: 2,
-    bevelSize: 0.0015,
-    bevelThickness: 0.0015,
-  });
-  cardGeo.center();
-
+  // 4a. Front Face: with Engagement Ceremony artwork texture and rounded corners
+  const cardGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
   const cardMesh = new THREE.Mesh(cardGeo, materials.cardPaper);
   cardMesh.name = 'InnerCardMesh';
+  cardMesh.position.set(0, 0, halfCardT);
   cardMesh.renderOrder = 3;
   cardMesh.castShadow = true;
   cardMesh.receiveShadow = true;
   cardGroup.add(cardMesh);
+
+  // 4b. Back Face: clean luxury ivory cotton paper
+  const cardBackGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
+  const cardBackMesh = new THREE.Mesh(cardBackGeo, materials.cardBackPaper);
+  cardBackMesh.name = 'InnerCardBackMesh';
+  cardBackMesh.position.set(0, 0, -halfCardT);
+  cardBackMesh.rotation.y = Math.PI;
+  cardBackMesh.renderOrder = 3;
+  cardBackMesh.castShadow = true;
+  cardBackMesh.receiveShadow = true;
+  cardGroup.add(cardBackMesh);
+
+  // 4c. 3D Edge Wall around the card perimeter
+  const cardRimGeo = createCardRimGeometry(cardW, cardH, cardThickness, cardRadius);
+  const cardRimMesh = new THREE.Mesh(cardRimGeo, materials.cardBackPaper);
+  cardRimMesh.name = 'InnerCardRimMesh';
+  cardRimMesh.renderOrder = 3;
+  cardRimMesh.castShadow = true;
+  cardRimMesh.receiveShadow = true;
+  cardGroup.add(cardRimMesh);
 
   // 5. BACK POCKET: The lower/side flaps textured with the back image, subtle rounded corners
   const pocketGeo = createRoundedPlaneGeometry(width, height, cornerRadius);

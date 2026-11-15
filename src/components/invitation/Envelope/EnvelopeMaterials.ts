@@ -8,6 +8,7 @@ export interface EnvelopeMaterialsMap {
   flapArt: THREE.MeshStandardMaterial;
   paperInterior: THREE.MeshStandardMaterial;
   cardPaper: THREE.MeshStandardMaterial;
+  cardBackPaper: THREE.MeshStandardMaterial;
   nameSurface: THREE.MeshStandardMaterial;
 }
 
@@ -15,7 +16,8 @@ export function createEnvelopeMaterials(
   guestTexture: THREE.CanvasTexture,
   frontTexture?: THREE.Texture | null,
   pocketTexture?: THREE.Texture | null,
-  flapTexture?: THREE.Texture | null
+  flapTexture?: THREE.Texture | null,
+  cardTexture?: THREE.Texture | null
 ): EnvelopeMaterialsMap {
   const { materials } = ENVELOPE_CONFIG;
   const baseColor = new THREE.Color(materials.paperColor);
@@ -73,8 +75,20 @@ export function createEnvelopeMaterials(
     depthWrite: true,
   });
 
-  // Invitation card emerging from inside
+  // Invitation card emerging from inside with custom Engagement Ceremony artwork
   const cardPaper = new THREE.MeshStandardMaterial({
+    map: cardTexture || null,
+    color: cardTexture ? 0xffffff : new THREE.Color('#faf6ee'),
+    transparent: true,
+    alphaTest: 0.1,
+    roughness: 0.72,
+    metalness: 0.05,
+    side: THREE.DoubleSide,
+    depthWrite: true,
+  });
+
+  // Clean luxury ivory cotton paper for the card back and beveled edge
+  const cardBackPaper = new THREE.MeshStandardMaterial({
     color: new THREE.Color('#faf6ee'),
     roughness: 0.88,
     metalness: 0.03,
@@ -101,6 +115,7 @@ export function createEnvelopeMaterials(
     flapArt,
     paperInterior,
     cardPaper,
+    cardBackPaper,
     nameSurface,
   };
 }

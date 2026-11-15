@@ -23,6 +23,7 @@ export class EnvelopeScene {
   private frontArtworkTexture: THREE.Texture | null = null;
   private pocketArtworkTexture: THREE.Texture | null = null;
   private flapArtworkTexture: THREE.Texture | null = null;
+  private cardArtworkTexture: THREE.Texture | null = null;
   private materials: EnvelopeMaterialsMap;
   private modelParts: EnvelopeModelParts;
   private isDisposed = false;
@@ -110,12 +111,25 @@ export class EnvelopeScene {
       }
     );
 
+    this.cardArtworkTexture = textureLoader.load(
+      ENVELOPE_CONFIG.materials.cardTexturePath,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.generateMipmaps = true;
+        if (this.materials.cardPaper) {
+          this.materials.cardPaper.map = tex;
+          this.materials.cardPaper.needsUpdate = true;
+        }
+      }
+    );
+
     // 7. Materials & 3D Model
     this.materials = createEnvelopeMaterials(
       this.guestTexture.getTexture(),
       this.frontArtworkTexture,
       this.pocketArtworkTexture,
-      this.flapArtworkTexture
+      this.flapArtworkTexture,
+      this.cardArtworkTexture
     );
     this.modelParts = createEnvelopeModel(this.materials);
     this.scene.add(this.modelParts.root);
@@ -199,7 +213,7 @@ export class EnvelopeScene {
       // STRICT ORDER: First the envelope opens completely. THEN the paper comes out.
       const targetFlapAngle = -Math.PI * 1.06;
       const targetFlapZ = -0.020;
-      const targetCardY = 1.75;
+      const targetCardY = 1.82;
       const targetCardZ = 0.022;
 
       const tl = gsap.timeline();
@@ -323,6 +337,7 @@ export class EnvelopeScene {
     if (this.frontArtworkTexture) this.frontArtworkTexture.dispose();
     if (this.pocketArtworkTexture) this.pocketArtworkTexture.dispose();
     if (this.flapArtworkTexture) this.flapArtworkTexture.dispose();
+    if (this.cardArtworkTexture) this.cardArtworkTexture.dispose();
 
     Object.values(this.materials).forEach((mat) => mat.dispose());
 
