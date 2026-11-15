@@ -8,6 +8,8 @@ export interface Envelope3DRef {
   updateGuest: (name: string, category: string) => void;
   toggleOpen: () => boolean;
   getIsOpen: () => boolean;
+  toggleUnfold: () => boolean;
+  getIsUnfolded: () => boolean;
 }
 
 interface Envelope3DProps {
@@ -33,6 +35,12 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
         },
         getIsOpen: () => {
           return sceneRef.current ? sceneRef.current.getIsOpen() : false;
+        },
+        toggleUnfold: () => {
+          return sceneRef.current ? sceneRef.current.toggleUnfold() : false;
+        },
+        getIsUnfolded: () => {
+          return sceneRef.current ? sceneRef.current.getIsUnfolded() : false;
         },
       }),
       []

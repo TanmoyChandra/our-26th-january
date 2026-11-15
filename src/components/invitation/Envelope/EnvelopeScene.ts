@@ -33,6 +33,8 @@ export class EnvelopeScene {
   private isUserInteracting = false;
   private giggleTimeline: gsap.core.Timeline | null = null;
   private openTimeline: gsap.core.Timeline | null = null;
+  private unfoldTimeline: gsap.core.Timeline | null = null;
+  private isUnfolded = false;
   private entranceGiggleDone = false;
   private startTime = performance.now();
 
@@ -237,6 +239,17 @@ export class EnvelopeScene {
       this.openTimeline.kill();
       this.openTimeline = null;
     }
+
+    if (this.unfoldTimeline) {
+      this.unfoldTimeline.kill();
+      this.unfoldTimeline = null;
+    }
+    if (!this.isOpen && this.isUnfolded) {
+      this.isUnfolded = false;
+      this.modelParts.topPanelHinge.rotation.x = -Math.PI;
+      this.modelParts.bottomPanelHinge.rotation.x = Math.PI;
+      this.modelParts.root.position.y = 0;
+    }
     this.entranceGiggleDone = true;
 
     const width = this.container.clientWidth || window.innerWidth;
@@ -422,6 +435,156 @@ export class EnvelopeScene {
     return this.isOpen;
   }
 
+  /**
+   * Smoothly unfolds the 3-fold card out of the envelope to full screen width.
+   * Clicking toggles between the unfolded reading view and the nestled envelope view.
+   */
+  public toggleUnfold(): boolean {
+    if (this.isDisposed || !this.isOpen) return this.isUnfolded;
+    this.isUnfolded = !this.isUnfolded;
+
+    if (this.unfoldTimeline) {
+      this.unfoldTimeline.kill();
+      this.unfoldTimeline = null;
+    }
+
+    const width = this.container.clientWidth || window.innerWidth;
+    const height = this.container.clientHeight || window.innerHeight;
+    const aspect = width / height;
+    const fovInRad = (this.camera.fov * Math.PI) / 180;
+    const halfFovTan = Math.tan(fovInRad / 2);
+
+    if (this.isUnfolded) {
+      // 1. UNFOLD TO FULL READING VIEW:
+      // The 3-fold card is 4.0 wide x 9.0 tall.
+      // Width at 90% screen width:
+      const zForCardWidth = 4.0 / (0.90 * 2 * halfFovTan * aspect);
+      // Height at 88% screen height:
+      const zForCardHeight = 9.0 / (0.88 * 2 * halfFovTan);
+      const targetUnfoldZ = Math.max(zForCardWidth, zForCardHeight);
+
+      if (this.controls) this.controls.enabled = false;
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          if (this.controls) {
+            this.controls.target.set(0, 0, 0);
+            this.controls.update();
+            this.controls.enabled = true;
+          }
+          this.unfoldTimeline = null;
+        },
+      });
+      this.unfoldTimeline = tl;
+
+      // Card glides up to dead center of viewport
+      tl.to(this.modelParts.cardGroup.position, {
+        x: 0,
+        y: 0,
+        z: 0.35,
+        duration: 0.85,
+        ease: 'power2.inOut',
+      }, 0);
+
+      // Envelope lowers slightly to give full focus to the 3-fold card
+      tl.to(this.modelParts.root.position, {
+        y: -3.0,
+        duration: 0.85,
+        ease: 'power2.inOut',
+      }, 0);
+
+      // Camera glides to frame the 3-fold card at full width
+      tl.to(this.camera.position, {
+        x: 0,
+        y: 0,
+        z: targetUnfoldZ,
+        duration: 0.85,
+        ease: 'power2.inOut',
+        onUpdate: () => {
+          this.camera.lookAt(0, 0, 0);
+        },
+      }, 0);
+
+      // Step 2: Top fold lifts and unfolds upward (rotation.x from -Math.PI to 0)
+      tl.to(this.modelParts.topPanelHinge.rotation, {
+        x: 0,
+        duration: 0.9,
+        ease: 'power2.out',
+      }, '+=0.05');
+
+      // Step 3: Bottom fold drops and unfolds downward (rotation.x from Math.PI to 0)
+      tl.to(this.modelParts.bottomPanelHinge.rotation, {
+        x: 0,
+        duration: 0.9,
+        ease: 'power2.out',
+      }, '-=0.65');
+    } else {
+      // 2. FOLD BACK INTO NESTLED ENVELOPE:
+      if (this.controls) this.controls.enabled = false;
+
+      const targetZ = this.calculateCameraDistance(width, height);
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          if (this.controls) {
+            this.controls.target.set(0, 0, 0);
+            this.controls.update();
+            this.controls.enabled = true;
+          }
+          this.unfoldTimeline = null;
+        },
+      });
+      this.unfoldTimeline = tl;
+
+      // Step 1: Panels fold back
+      tl.to(this.modelParts.bottomPanelHinge.rotation, {
+        x: Math.PI,
+        duration: 0.75,
+        ease: 'power2.inOut',
+      }, 0);
+
+      tl.to(this.modelParts.topPanelHinge.rotation, {
+        x: -Math.PI,
+        duration: 0.75,
+        ease: 'power2.inOut',
+      }, '+=0.05');
+
+      // Step 2: Card glides back into envelope pocket
+      tl.to(this.modelParts.cardGroup.position, {
+        x: 0,
+        y: 0.88,
+        z: 0.010,
+        duration: 0.85,
+        ease: 'power2.inOut',
+      }, '+=0.08');
+
+      // Envelope moves back to center
+      tl.to(this.modelParts.root.position, {
+        y: 0,
+        duration: 0.85,
+        ease: 'power2.inOut',
+      }, '<');
+
+      // Camera returns to standard envelope distance
+      tl.to(this.camera.position, {
+        x: 0,
+        y: 0,
+        z: targetZ,
+        duration: 0.85,
+        ease: 'power2.inOut',
+        onUpdate: () => {
+          this.camera.lookAt(0, 0, 0);
+        },
+      }, '<');
+    }
+
+    return this.isUnfolded;
+  }
+
+  public getIsUnfolded(): boolean {
+    return this.isUnfolded;
+  }
+
   public updateGuest(name: string, category: string): void {
     if (this.isDisposed) return;
     this.guestTexture.update({ displayName: name, category });
@@ -524,9 +687,11 @@ export class EnvelopeScene {
     if (
       this.entranceGiggleDone &&
       !this.isOpen &&
+      !this.isUnfolded &&
       !this.isUserInteracting &&
       !this.giggleTimeline &&
-      !this.openTimeline
+      !this.openTimeline &&
+      !this.unfoldTimeline
     ) {
       const elapsed = (performance.now() - this.startTime) * 0.001;
       const baseRotY = Math.abs(this.modelParts.root.rotation.y) > Math.PI / 2 ? Math.PI : 0;
@@ -578,6 +743,11 @@ export class EnvelopeScene {
     if (this.openTimeline) {
       this.openTimeline.kill();
       this.openTimeline = null;
+    }
+
+    if (this.unfoldTimeline) {
+      this.unfoldTimeline.kill();
+      this.unfoldTimeline = null;
     }
 
     if (this.animationFrameId !== null) {

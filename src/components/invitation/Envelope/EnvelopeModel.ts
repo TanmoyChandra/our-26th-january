@@ -10,6 +10,10 @@ export interface EnvelopeModelParts {
   cardMesh: THREE.Mesh;
   cardBackMesh: THREE.Mesh;
   cardRimMesh: THREE.Mesh;
+  topPanelHinge: THREE.Group;
+  topPanelMesh: THREE.Mesh;
+  bottomPanelHinge: THREE.Group;
+  bottomPanelMesh: THREE.Mesh;
   backPocketMesh: THREE.Mesh;
   topFlapHinge: THREE.Group;
   topFlapMesh: THREE.Mesh;
@@ -356,7 +360,7 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   topFlapEdgeMesh.receiveShadow = true;
   topFlapHinge.add(topFlapEdgeMesh);
 
-  // 4. INNER INVITATION CARD: realistic thick stationery board with Engagement Ceremony artwork
+  // 4. INNER INVITATION CARD: 3-fold stationery card with Engagement Ceremony artwork
   const cardGroup = new THREE.Group();
   cardGroup.name = 'InnerCardGroup';
   cardGroup.position.set(0, 0, 0.005);
@@ -368,17 +372,20 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   const cardThickness = 0.008;
   const halfCardT = cardThickness / 2;
 
-  // 4a. Front Face: with Engagement Ceremony artwork texture and rounded corners
-  const cardGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
-  const cardMesh = new THREE.Mesh(cardGeo, materials.cardPaper);
+  // 4a. MIDDLE PANEL (Center fold of 3-fold card)
+  const middleGroup = new THREE.Group();
+  middleGroup.name = 'MiddlePanelGroup';
+  cardGroup.add(middleGroup);
+
+  const middleGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
+  const cardMesh = new THREE.Mesh(middleGeo, materials.cardPaper);
   cardMesh.name = 'InnerCardMesh';
   cardMesh.position.set(0, 0, halfCardT);
   cardMesh.renderOrder = 3;
   cardMesh.castShadow = true;
   cardMesh.receiveShadow = true;
-  cardGroup.add(cardMesh);
+  middleGroup.add(cardMesh);
 
-  // 4b. Back Face: clean luxury ivory cotton paper
   const cardBackGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
   const cardBackMesh = new THREE.Mesh(cardBackGeo, materials.cardBackPaper);
   cardBackMesh.name = 'InnerCardBackMesh';
@@ -387,16 +394,91 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   cardBackMesh.renderOrder = 3;
   cardBackMesh.castShadow = true;
   cardBackMesh.receiveShadow = true;
-  cardGroup.add(cardBackMesh);
+  middleGroup.add(cardBackMesh);
 
-  // 4c. 3D Edge Wall around the card perimeter
   const cardRimGeo = createCardRimGeometry(cardW, cardH, cardThickness, cardRadius);
   const cardRimMesh = new THREE.Mesh(cardRimGeo, materials.cardBackPaper);
   cardRimMesh.name = 'InnerCardRimMesh';
   cardRimMesh.renderOrder = 3;
   cardRimMesh.castShadow = true;
   cardRimMesh.receiveShadow = true;
-  cardGroup.add(cardRimMesh);
+  middleGroup.add(cardRimMesh);
+
+  // 4b. TOP PANEL (Hinges along top edge of Middle Panel at y = +cardH / 2)
+  const topPanelHinge = new THREE.Group();
+  topPanelHinge.name = 'TopPanelHinge';
+  topPanelHinge.position.set(0, cardH / 2, -halfCardT);
+  cardGroup.add(topPanelHinge);
+
+  const topGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
+  topGeo.translate(0, cardH / 2, 0); // pivots along bottom edge
+
+  const topPanelMesh = new THREE.Mesh(topGeo, materials.cardPaper);
+  topPanelMesh.name = 'TopPanelFrontMesh';
+  topPanelMesh.position.set(0, 0, halfCardT);
+  topPanelMesh.renderOrder = 3;
+  topPanelMesh.castShadow = true;
+  topPanelMesh.receiveShadow = true;
+  topPanelHinge.add(topPanelMesh);
+
+  const topPanelBackMesh = new THREE.Mesh(topGeo, materials.cardBackPaper);
+  topPanelBackMesh.name = 'TopPanelBackMesh';
+  topPanelBackMesh.position.set(0, 0, -halfCardT);
+  topPanelBackMesh.rotation.y = Math.PI;
+  topPanelBackMesh.renderOrder = 3;
+  topPanelBackMesh.castShadow = true;
+  topPanelBackMesh.receiveShadow = true;
+  topPanelHinge.add(topPanelBackMesh);
+
+  const topRimGeo = createCardRimGeometry(cardW, cardH, cardThickness, cardRadius);
+  topRimGeo.translate(0, cardH / 2, 0);
+  const topRimMesh = new THREE.Mesh(topRimGeo, materials.cardBackPaper);
+  topRimMesh.name = 'TopPanelRimMesh';
+  topRimMesh.renderOrder = 3;
+  topRimMesh.castShadow = true;
+  topRimMesh.receiveShadow = true;
+  topPanelHinge.add(topRimMesh);
+
+  // Initially FOLDED backwards behind Middle Panel
+  topPanelHinge.rotation.x = -Math.PI;
+
+  // 4c. BOTTOM PANEL (Hinges along bottom edge of Middle Panel at y = -cardH / 2)
+  const bottomPanelHinge = new THREE.Group();
+  bottomPanelHinge.name = 'BottomPanelHinge';
+  bottomPanelHinge.position.set(0, -cardH / 2, -halfCardT * 2);
+  cardGroup.add(bottomPanelHinge);
+
+  const bottomGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
+  bottomGeo.translate(0, -cardH / 2, 0); // pivots along top edge
+
+  const bottomPanelMesh = new THREE.Mesh(bottomGeo, materials.cardPaper);
+  bottomPanelMesh.name = 'BottomPanelFrontMesh';
+  bottomPanelMesh.position.set(0, 0, halfCardT);
+  bottomPanelMesh.renderOrder = 3;
+  bottomPanelMesh.castShadow = true;
+  bottomPanelMesh.receiveShadow = true;
+  bottomPanelHinge.add(bottomPanelMesh);
+
+  const bottomPanelBackMesh = new THREE.Mesh(bottomGeo, materials.cardBackPaper);
+  bottomPanelBackMesh.name = 'BottomPanelBackMesh';
+  bottomPanelBackMesh.position.set(0, 0, -halfCardT);
+  bottomPanelBackMesh.rotation.y = Math.PI;
+  bottomPanelBackMesh.renderOrder = 3;
+  bottomPanelBackMesh.castShadow = true;
+  bottomPanelBackMesh.receiveShadow = true;
+  bottomPanelHinge.add(bottomPanelBackMesh);
+
+  const bottomRimGeo = createCardRimGeometry(cardW, cardH, cardThickness, cardRadius);
+  bottomRimGeo.translate(0, -cardH / 2, 0);
+  const bottomRimMesh = new THREE.Mesh(bottomRimGeo, materials.cardBackPaper);
+  bottomRimMesh.name = 'BottomPanelRimMesh';
+  bottomRimMesh.renderOrder = 3;
+  bottomRimMesh.castShadow = true;
+  bottomRimMesh.receiveShadow = true;
+  bottomPanelHinge.add(bottomRimMesh);
+
+  // Initially FOLDED backwards behind Middle Panel
+  bottomPanelHinge.rotation.x = Math.PI;
 
   // 5. BACK POCKET: The lower/side flaps textured with the back image, subtle rounded corners
   const pocketGeo = createRoundedPlaneGeometry(width, height, cornerRadius);
@@ -419,6 +501,10 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
     cardMesh,
     cardBackMesh,
     cardRimMesh,
+    topPanelHinge,
+    topPanelMesh,
+    bottomPanelHinge,
+    bottomPanelMesh,
     backPocketMesh,
     topFlapHinge,
     topFlapMesh,
