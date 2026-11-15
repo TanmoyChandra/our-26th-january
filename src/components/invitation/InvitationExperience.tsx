@@ -41,10 +41,16 @@ export function InvitationExperience({
 
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-[#0c0a09] select-none">
-      {/* 1. Deep blurred ambient luxury backdrop */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] md:w-[480px] md:h-[480px] rounded-full bg-gradient-to-tr from-amber-600/25 via-amber-700/15 to-stone-500/10 blur-[90px]" />
-        <div className="absolute inset-0 bg-radial-vignette opacity-70" />
+      {/* 1. Overall space luxury banquet backdrop */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+        <img
+          src="/images/space_background.jpg"
+          alt="Wedding venue ambience"
+          className="w-full h-full object-cover object-center"
+        />
+        {/* Ambient lighting & subtle vignette overlay to give depth and maintain contrast for envelope & UI */}
+        <div className="absolute inset-0 bg-black/25 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/50 pointer-events-none" />
       </div>
 
       {/* 2. Top Bar (Header) */}
