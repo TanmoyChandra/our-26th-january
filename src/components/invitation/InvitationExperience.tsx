@@ -62,12 +62,12 @@ export function InvitationExperience({
         </div>
       </header>
 
-      {/* 3. Interactive 3D Envelope Viewport */}
+      {/* 3. Interactive 3D Envelope Viewport: Full Screen Viewport */}
       <section
-        className="relative z-10 w-full h-full flex items-center justify-center p-2"
+        className="absolute inset-0 z-10 w-full h-full flex items-center justify-center overflow-hidden"
         aria-label="3D Envelope Experience"
       >
-        <div className="w-full max-w-[420px] h-[75vh] max-h-[580px] flex items-center justify-center">
+        <div className="w-full h-full flex items-center justify-center">
           <Envelope3D
             ref={envelope3DRef}
             guestName={guestInfo.displayName}
