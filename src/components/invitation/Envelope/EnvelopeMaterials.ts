@@ -32,9 +32,12 @@ export function createEnvelopeMaterials(
   const paperFrontArt = new THREE.MeshStandardMaterial({
     map: frontTexture || null,
     color: frontTexture ? 0xffffff : baseColor,
+    transparent: true,
+    alphaTest: 0.1,
     roughness: 0.78,
     metalness: 0.05,
     side: THREE.FrontSide,
+    depthWrite: true,
   });
 
   // Back Pocket surface with the bottom & side flaps texture from the uploaded image
