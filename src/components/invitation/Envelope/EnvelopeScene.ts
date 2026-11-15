@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { gsap } from 'gsap';
 import { ENVELOPE_CONFIG } from '@/config/envelope';
 import { GuestNameTexture } from './GuestNameTexture';
 import { createEnvelopeMaterials, EnvelopeMaterialsMap } from './EnvelopeMaterials';
@@ -20,10 +21,13 @@ export class EnvelopeScene {
   private controls: OrbitControls | null = null;
   private guestTexture: GuestNameTexture;
   private frontArtworkTexture: THREE.Texture | null = null;
+  private pocketArtworkTexture: THREE.Texture | null = null;
+  private flapArtworkTexture: THREE.Texture | null = null;
   private materials: EnvelopeMaterialsMap;
   private modelParts: EnvelopeModelParts;
   private isDisposed = false;
   private animationFrameId: number | null = null;
+  private isOpen = false;
 
   constructor(options: EnvelopeSceneOptions) {
     this.container = options.container;
@@ -37,7 +41,7 @@ export class EnvelopeScene {
     const { fov, near, far } = ENVELOPE_CONFIG.camera;
 
     const isMobile = width < 640;
-    const initialZ = isMobile ? 7.6 : 6.8;
+    const initialZ = isMobile ? 8.2 : 7.2;
 
     this.camera = new THREE.PerspectiveCamera(fov, width / height, near, far);
     this.camera.position.set(0, 0, initialZ);
@@ -58,7 +62,7 @@ export class EnvelopeScene {
 
     this.container.appendChild(this.renderer.domElement);
 
-    // 4. Lights positioned for realistic warm paper reflection
+    // 4. Lighting setup
     this.setupLighting();
 
     // 5. Guest Name Texture mapped to envelope front
@@ -67,15 +71,14 @@ export class EnvelopeScene {
       category: options.category,
     });
 
-    // 6. Load front envelope artwork texture
+    // 6. Load textures for Front, Flap, and Pocket
     const textureLoader = new THREE.TextureLoader();
+
     this.frontArtworkTexture = textureLoader.load(
       ENVELOPE_CONFIG.materials.frontTexturePath,
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.generateMipmaps = true;
-        tex.minFilter = THREE.LinearMipmapLinearFilter;
-        tex.magFilter = THREE.LinearFilter;
         if (this.materials.paperFrontArt) {
           this.materials.paperFrontArt.map = tex;
           this.materials.paperFrontArt.needsUpdate = true;
@@ -83,34 +86,54 @@ export class EnvelopeScene {
       }
     );
 
+    this.pocketArtworkTexture = textureLoader.load(
+      ENVELOPE_CONFIG.materials.pocketTexturePath,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.generateMipmaps = true;
+        if (this.materials.pocketArt) {
+          this.materials.pocketArt.map = tex;
+          this.materials.pocketArt.needsUpdate = true;
+        }
+      }
+    );
+
+    this.flapArtworkTexture = textureLoader.load(
+      ENVELOPE_CONFIG.materials.flapTexturePath,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.generateMipmaps = true;
+        if (this.materials.flapArt) {
+          this.materials.flapArt.map = tex;
+          this.materials.flapArt.needsUpdate = true;
+        }
+      }
+    );
+
     // 7. Materials & 3D Model
     this.materials = createEnvelopeMaterials(
       this.guestTexture.getTexture(),
-      this.frontArtworkTexture
+      this.frontArtworkTexture,
+      this.pocketArtworkTexture,
+      this.flapArtworkTexture
     );
     this.modelParts = createEnvelopeModel(this.materials);
     this.scene.add(this.modelParts.root);
 
-    // 8. Interactive rotation & zoom (mouse wheel scroll + mobile pinch-to-zoom)
+    // 8. Full 360 degree interactive rotation & zoom (touch & mouse)
     if (options.interactiveRotation !== false) {
       this.controls = new OrbitControls(this.camera, this.renderer.domElement);
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.06;
-
-      // Enable zoom for both mouse wheel and touch-screen pinch
       this.controls.enableZoom = true;
       this.controls.zoomSpeed = 1.2;
-      this.controls.minDistance = 3.5; // Closest zoom in
-      this.controls.maxDistance = 14.0; // Furthest zoom out
-
-      this.controls.enablePan = false; // keep envelope centered
+      this.controls.minDistance = 3.5;
+      this.controls.maxDistance = 14.0;
+      this.controls.enablePan = false;
       this.controls.rotateSpeed = 0.95;
 
-      // Allow rotating up/down moderately
-      this.controls.minPolarAngle = Math.PI / 4;        // ~45 deg
-      this.controls.maxPolarAngle = (3 * Math.PI) / 4;  // ~135 deg
-
-      // Allow full 360° horizontal rotation
+      this.controls.minPolarAngle = Math.PI / 4;
+      this.controls.maxPolarAngle = (3 * Math.PI) / 4;
       this.controls.minAzimuthAngle = -Infinity;
       this.controls.maxAzimuthAngle = Infinity;
     }
@@ -119,7 +142,7 @@ export class EnvelopeScene {
     this.handleResize = this.handleResize.bind(this);
     window.addEventListener('resize', this.handleResize);
 
-    // 10. Start continuous loop for smooth damping rotation & zooming
+    // 10. Start render loop
     this.animate = this.animate.bind(this);
     this.animate();
   }
@@ -144,7 +167,6 @@ export class EnvelopeScene {
     mainLight.shadow.bias = -0.0002;
     this.scene.add(mainLight);
 
-    // Direct front lighting to illuminate the artwork vibrantly
     const frontFillLight = new THREE.DirectionalLight('#fff5ea', 1.1);
     frontFillLight.position.set(0, 0, -6);
     this.scene.add(frontFillLight);
@@ -152,6 +174,96 @@ export class EnvelopeScene {
     const rimLight = new THREE.DirectionalLight('#fef3c7', 0.6);
     rimLight.position.set(-2, -3, 5);
     this.scene.add(rimLight);
+  }
+
+  /**
+   * Smoothly animates the flap open/closed and slides the card out.
+   * Flap flips back behind the card, and the emerging card stays in the TOP layer.
+   */
+  public toggleOpen(): boolean {
+    if (this.isDisposed) return this.isOpen;
+    this.isOpen = !this.isOpen;
+
+    // Smoothly orient to the back face where the opening action happens
+    gsap.to(this.modelParts.root.rotation, {
+      y: 0,
+      duration: 0.6,
+      ease: 'power2.out',
+    });
+
+    if (this.isOpen) {
+      // 1. OPENING SEQUENCE:
+      // Flap swings up and backwards (+X rotation) behind the envelope and inner card.
+      // Hinge shifts to z = -0.010, so the entire flap sits in the BACK layer behind the card.
+      const targetFlapAngle = Math.PI * 0.96;
+      const targetFlapZ = -0.010;
+      const targetCardY = 1.75;
+      const targetCardZ = 0.015;
+
+      // Animate Top Flap Opening around hinge and shift Z behind card
+      gsap.to(this.modelParts.topFlapHinge.rotation, {
+        x: targetFlapAngle,
+        duration: 1.05,
+        ease: 'power2.inOut',
+      });
+
+      gsap.to(this.modelParts.topFlapHinge.position, {
+        z: targetFlapZ,
+        duration: 1.05,
+        ease: 'power2.inOut',
+        onStart: () => {
+          // Immediately place triangle flap in back layer behind card and pocket
+          this.modelParts.topFlapMesh.renderOrder = 2;
+          this.modelParts.cardMesh.renderOrder = 4;
+          this.modelParts.backPocketMesh.renderOrder = 5;
+        },
+      });
+
+      // Animate Card Emergence: slides up to sit on the TOP layer in front of the triangle flap
+      gsap.to(this.modelParts.cardGroup.position, {
+        y: targetCardY,
+        z: targetCardZ,
+        duration: 1.25,
+        delay: 0.35,
+        ease: 'power2.out',
+      });
+    } else {
+      // 2. CLOSING SEQUENCE:
+      // Card slides back inside pocket first
+      gsap.to(this.modelParts.cardGroup.position, {
+        y: 0,
+        z: 0.010,
+        duration: 0.85,
+        ease: 'power2.inOut',
+      });
+
+      // Flap rotates back down and comes forward to sit on top of pocket
+      gsap.to(this.modelParts.topFlapHinge.rotation, {
+        x: 0,
+        duration: 0.95,
+        delay: 0.3,
+        ease: 'power2.inOut',
+      });
+
+      gsap.to(this.modelParts.topFlapHinge.position, {
+        z: 0.023,
+        duration: 0.95,
+        delay: 0.3,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          // Flap is now closed over the pocket
+          this.modelParts.topFlapMesh.renderOrder = 5;
+          this.modelParts.backPocketMesh.renderOrder = 4;
+          this.modelParts.cardMesh.renderOrder = 3;
+        },
+      });
+    }
+
+    return this.isOpen;
+  }
+
+  public getIsOpen(): boolean {
+    return this.isOpen;
   }
 
   public updateGuest(name: string, category: string): void {
@@ -177,7 +289,7 @@ export class EnvelopeScene {
 
     this.camera.aspect = width / height;
     const isMobile = width < 640;
-    this.camera.position.z = isMobile ? 7.6 : 6.8;
+    this.camera.position.z = isMobile ? 8.2 : 7.2;
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(width, height);
@@ -197,9 +309,10 @@ export class EnvelopeScene {
     }
 
     this.guestTexture.dispose();
-    if (this.frontArtworkTexture) {
-      this.frontArtworkTexture.dispose();
-    }
+    if (this.frontArtworkTexture) this.frontArtworkTexture.dispose();
+    if (this.pocketArtworkTexture) this.pocketArtworkTexture.dispose();
+    if (this.flapArtworkTexture) this.flapArtworkTexture.dispose();
+
     Object.values(this.materials).forEach((mat) => mat.dispose());
 
     this.scene.traverse((obj) => {

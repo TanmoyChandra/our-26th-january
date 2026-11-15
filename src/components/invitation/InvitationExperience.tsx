@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { EventDetails, GuestInfo, InvitationConfig } from '@/types/invitation';
+import type { Envelope3DRef } from './Envelope3D';
 
 const Envelope3D = dynamic(
   () => import('./Envelope3D').then((mod) => mod.Envelope3D),
@@ -28,17 +29,25 @@ interface InvitationExperienceProps {
 export function InvitationExperience({
   guestInfo,
 }: InvitationExperienceProps) {
+  const envelope3DRef = useRef<Envelope3DRef | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleToggle = () => {
+    if (envelope3DRef.current) {
+      const state = envelope3DRef.current.toggleOpen();
+      setIsOpen(state);
+    }
+  };
+
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-[#0c0a09] select-none">
       {/* 1. Deep blurred ambient luxury backdrop */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Warm amber/gold bokeh glow behind the envelope */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] md:w-[480px] md:h-[480px] rounded-full bg-gradient-to-tr from-amber-600/25 via-amber-700/15 to-stone-500/10 blur-[90px]" />
-        {/* Soft cool vignette */}
         <div className="absolute inset-0 bg-radial-vignette opacity-70" />
       </div>
 
-      {/* 2. Top Bar (Mobile-first discreet header) */}
+      {/* 2. Top Bar (Header) */}
       <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-6 flex justify-between items-center pointer-events-none">
         <div className="flex flex-col">
           <span className="text-[10px] uppercase font-mono tracking-[0.25em] text-amber-500/80">
@@ -60,17 +69,29 @@ export function InvitationExperience({
       >
         <div className="w-full max-w-[420px] h-[75vh] max-h-[580px] flex items-center justify-center">
           <Envelope3D
+            ref={envelope3DRef}
             guestName={guestInfo.displayName}
             category={guestInfo.category}
           />
         </div>
       </section>
 
-      {/* 4. Bottom Hint (Touch/Drag to rotate prompt) */}
-      <footer className="absolute bottom-7 left-0 right-0 z-20 flex flex-col items-center justify-center gap-1.5 pointer-events-none text-center px-4">
-        <div className="flex items-center gap-2 text-[11px] font-mono tracking-widest uppercase text-neutral-400/80">
+      {/* 4. Bottom Floating Action Controls */}
+      <footer className="absolute bottom-8 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4">
+        {/* OPEN / CLOSE BUTTON */}
+        <button
+          onClick={handleToggle}
+          className="group relative inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-900/60 via-amber-800/70 to-amber-900/60 text-amber-100 shadow-lg shadow-amber-950/50 backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 hover:border-amber-400/70"
+          aria-label={isOpen ? 'Close Envelope' : 'Open Envelope'}
+        >
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          <span className="font-serif tracking-widest uppercase text-xs font-medium">
+            {isOpen ? 'Close Envelope' : 'Open Envelope'}
+          </span>
           <svg
-            className="w-4 h-4 text-amber-500/70 animate-pulse"
+            className={`w-3.5 h-3.5 text-amber-300/90 transition-transform duration-300 ${
+              isOpen ? 'rotate-180' : ''
+            }`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -78,15 +99,16 @@ export function InvitationExperience({
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+              strokeWidth={2}
+              d="M5 15l7-7 7 7"
             />
           </svg>
-          <span>Drag or Swipe to Rotate</span>
+        </button>
+
+        {/* Rotate & Pinch hint */}
+        <div className="flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase text-neutral-400/80">
+          <span>Swipe to rotate &bull; Pinch to zoom</span>
         </div>
-        <p className="text-[10px] text-neutral-500 font-sans tracking-wide">
-          Tap and rotate to inspect the physical envelope
-        </p>
       </footer>
     </main>
   );

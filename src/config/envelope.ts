@@ -28,6 +28,9 @@ export interface EnvelopeConfig {
     innerColor: string;
     shadowEdgeColor: string;
     frontTexturePath: string;
+    backTexturePath: string;
+    flapTexturePath: string;
+    pocketTexturePath: string;
   };
   guestName: {
     canvasWidth: number;
@@ -53,7 +56,7 @@ export interface EnvelopeConfig {
 export const ENVELOPE_CONFIG: EnvelopeConfig = {
   dimensions: {
     width: 4.8,
-    height: 3.014, // Exact 1024:643 aspect ratio (1.5925)
+    height: 3.014, // Exactly 1024:643 aspect ratio
     depth: 0.04,
     flapOverlap: 0.12,
   },
@@ -74,12 +77,15 @@ export const ENVELOPE_CONFIG: EnvelopeConfig = {
     fillPosition: [-4, -3, 3],
   },
   materials: {
-    paperColor: '#ebd7b2', // Matches the warm golden-ivory tone of the new artwork
+    paperColor: '#ebd7b2',
     roughness: 0.82,
     metalness: 0.04,
     innerColor: '#dfc59e',
     shadowEdgeColor: '#ba9f79',
     frontTexturePath: '/textures/envelope/envelope_front.jpg',
+    backTexturePath: '/textures/envelope/envelope_back.jpg',
+    flapTexturePath: '/textures/envelope/flap.png',
+    pocketTexturePath: '/textures/envelope/pocket.png',
   },
   guestName: {
     canvasWidth: 2048,
@@ -87,7 +93,7 @@ export const ENVELOPE_CONFIG: EnvelopeConfig = {
     fontFamily: '"Great Vibes", "Alex Brush", "Snell Roundhand", "Apple Chancery", cursive',
     fontSize: 98,
     fontWeight: '400',
-    textColor: '#8a2b34', // Soft warm crimson red ink
+    textColor: '#8a2b34',
     subtextColor: 'rgba(110, 40, 30, 0.75)',
     subfontSize: 24,
     letterSpacing: '0.02em',

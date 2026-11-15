@@ -6,6 +6,8 @@ import { EnvelopeScene } from './Envelope/EnvelopeScene';
 export interface Envelope3DRef {
   setProgress?: (progress: number) => void;
   updateGuest: (name: string, category: string) => void;
+  toggleOpen: () => boolean;
+  getIsOpen: () => boolean;
 }
 
 interface Envelope3DProps {
@@ -25,6 +27,12 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
       () => ({
         updateGuest: (name: string, cat: string) => {
           sceneRef.current?.updateGuest(name, cat);
+        },
+        toggleOpen: () => {
+          return sceneRef.current ? sceneRef.current.toggleOpen() : false;
+        },
+        getIsOpen: () => {
+          return sceneRef.current ? sceneRef.current.getIsOpen() : false;
         },
       }),
       []
