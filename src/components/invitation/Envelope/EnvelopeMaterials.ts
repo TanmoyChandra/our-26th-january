@@ -17,7 +17,8 @@ export function createEnvelopeMaterials(
   frontTexture?: THREE.Texture | null,
   pocketTexture?: THREE.Texture | null,
   flapTexture?: THREE.Texture | null,
-  cardTexture?: THREE.Texture | null
+  cardTexture?: THREE.Texture | null,
+  cardBackTexture?: THREE.Texture | null
 ): EnvelopeMaterialsMap {
   const { materials } = ENVELOPE_CONFIG;
   const baseColor = new THREE.Color(materials.paperColor);
@@ -72,7 +73,8 @@ export function createEnvelopeMaterials(
 
   // Warm interior paper lining visible inside when envelope opens
   const paperInterior = new THREE.MeshStandardMaterial({
-    color: new THREE.Color('#9c7b52'),
+    map: cardBackTexture || null,
+    color: cardBackTexture ? 0xffffff : new THREE.Color('#9c7b52'),
     roughness: 0.94,
     metalness: 0.02,
     side: THREE.DoubleSide,
@@ -91,11 +93,14 @@ export function createEnvelopeMaterials(
     depthWrite: true,
   });
 
-  // Clean luxury ivory cotton paper for the card back and beveled edge
+  // Luxury textured parchment for the card back and beveled edge
   const cardBackPaper = new THREE.MeshStandardMaterial({
-    color: new THREE.Color('#faf6ee'),
-    roughness: 0.88,
-    metalness: 0.03,
+    map: cardBackTexture || null,
+    color: cardBackTexture ? 0xffffff : new THREE.Color('#faf6ee'),
+    transparent: true,
+    alphaTest: 0.1,
+    roughness: 0.78,
+    metalness: 0.04,
     side: THREE.DoubleSide,
     depthWrite: true,
   });

@@ -32,6 +32,7 @@ export interface EnvelopeConfig {
     flapTexturePath: string;
     pocketTexturePath: string;
     cardTexturePath: string;
+    cardBackTexturePath: string;
   };
   guestName: {
     canvasWidth: number;
@@ -88,6 +89,7 @@ export const ENVELOPE_CONFIG: EnvelopeConfig = {
     flapTexturePath: '/textures/envelope/flap.png',
     pocketTexturePath: '/textures/envelope/pocket.png',
     cardTexturePath: '/textures/envelope/card_engagement.png',
+    cardBackTexturePath: '/textures/envelope/card_back.png',
   },
   guestName: {
     canvasWidth: 2048,

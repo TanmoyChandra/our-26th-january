@@ -24,6 +24,7 @@ export class EnvelopeScene {
   private pocketArtworkTexture: THREE.Texture | null = null;
   private flapArtworkTexture: THREE.Texture | null = null;
   private cardArtworkTexture: THREE.Texture | null = null;
+  private cardBackArtworkTexture: THREE.Texture | null = null;
   private materials: EnvelopeMaterialsMap;
   private modelParts: EnvelopeModelParts;
   private isDisposed = false;
@@ -123,13 +124,30 @@ export class EnvelopeScene {
       }
     );
 
+    this.cardBackArtworkTexture = textureLoader.load(
+      ENVELOPE_CONFIG.materials.cardBackTexturePath,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.generateMipmaps = true;
+        if (this.materials.cardBackPaper) {
+          this.materials.cardBackPaper.map = tex;
+          this.materials.cardBackPaper.needsUpdate = true;
+        }
+        if (this.materials.paperInterior) {
+          this.materials.paperInterior.map = tex;
+          this.materials.paperInterior.needsUpdate = true;
+        }
+      }
+    );
+
     // 7. Materials & 3D Model
     this.materials = createEnvelopeMaterials(
       this.guestTexture.getTexture(),
       this.frontArtworkTexture,
       this.pocketArtworkTexture,
       this.flapArtworkTexture,
-      this.cardArtworkTexture
+      this.cardArtworkTexture,
+      this.cardBackArtworkTexture
     );
     this.modelParts = createEnvelopeModel(this.materials);
     this.scene.add(this.modelParts.root);
@@ -338,6 +356,7 @@ export class EnvelopeScene {
     if (this.pocketArtworkTexture) this.pocketArtworkTexture.dispose();
     if (this.flapArtworkTexture) this.flapArtworkTexture.dispose();
     if (this.cardArtworkTexture) this.cardArtworkTexture.dispose();
+    if (this.cardBackArtworkTexture) this.cardBackArtworkTexture.dispose();
 
     Object.values(this.materials).forEach((mat) => mat.dispose());
 
