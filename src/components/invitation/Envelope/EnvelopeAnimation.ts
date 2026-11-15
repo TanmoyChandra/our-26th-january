@@ -46,7 +46,6 @@ export class EnvelopeAnimationController {
     } else if (p > 0.55) {
       flapAngle = maxFlapAngle;
     }
-    this.parts.flapHinge.rotation.x = flapAngle;
     this.parts.topFlapHinge.rotation.x = flapAngle;
 
     // 3. Envelope body movement when card emerges

@@ -19,6 +19,7 @@ export class EnvelopeScene {
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls | null = null;
   private guestTexture: GuestNameTexture;
+  private frontArtworkTexture: THREE.Texture | null = null;
   private materials: EnvelopeMaterialsMap;
   private modelParts: EnvelopeModelParts;
   private isDisposed = false;
@@ -35,9 +36,8 @@ export class EnvelopeScene {
     const height = this.container.clientHeight || window.innerHeight;
     const { fov, near, far } = ENVELOPE_CONFIG.camera;
 
-    // Adjust camera distance for mobile portrait view so envelope fills screen nicely
     const isMobile = width < 640;
-    const initialZ = isMobile ? 8.2 : 7.2;
+    const initialZ = isMobile ? 7.6 : 6.8;
 
     this.camera = new THREE.PerspectiveCamera(fov, width / height, near, far);
     this.camera.position.set(0, 0, initialZ);
@@ -54,13 +54,11 @@ export class EnvelopeScene {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
     this.renderer.toneMappingExposure = 1.05;
 
     this.container.appendChild(this.renderer.domElement);
 
-    // 4. Lights
-    // 4. Lights positioned to create authentic paper shadow creases
+    // 4. Lights positioned for realistic warm paper reflection
     this.setupLighting();
 
     // 5. Guest Name Texture mapped to envelope front
@@ -69,42 +67,59 @@ export class EnvelopeScene {
       category: options.category,
     });
 
-    // 6. Materials & 3D Model
-    // 6. Materials & 3D Model matching reference photo
-    this.materials = createEnvelopeMaterials(this.guestTexture.getTexture());
+    // 6. Load front envelope artwork texture
+    const textureLoader = new THREE.TextureLoader();
+    this.frontArtworkTexture = textureLoader.load(
+      ENVELOPE_CONFIG.materials.frontTexturePath,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.generateMipmaps = true;
+        tex.minFilter = THREE.LinearMipmapLinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        if (this.materials.paperFrontArt) {
+          this.materials.paperFrontArt.map = tex;
+          this.materials.paperFrontArt.needsUpdate = true;
+        }
+      }
+    );
+
+    // 7. Materials & 3D Model
+    this.materials = createEnvelopeMaterials(
+      this.guestTexture.getTexture(),
+      this.frontArtworkTexture
+    );
     this.modelParts = createEnvelopeModel(this.materials);
     this.scene.add(this.modelParts.root);
 
-    // 7. Interactive touch/drag rotation with OrbitControls
-    // 7. Full 360 degree interactive touch/drag rotation with OrbitControls
+    // 8. Interactive rotation & zoom (mouse wheel scroll + mobile pinch-to-zoom)
     if (options.interactiveRotation !== false) {
       this.controls = new OrbitControls(this.camera, this.renderer.domElement);
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.06;
-      this.controls.enableZoom = false; // keep mobile viewport stable
-      this.controls.enablePan = false;  // keep envelope centered
-      this.controls.rotateSpeed = 0.85;
+
+      // Enable zoom for both mouse wheel and touch-screen pinch
+      this.controls.enableZoom = true;
+      this.controls.zoomSpeed = 1.2;
+      this.controls.minDistance = 3.5; // Closest zoom in
+      this.controls.maxDistance = 14.0; // Furthest zoom out
+
+      this.controls.enablePan = false; // keep envelope centered
       this.controls.rotateSpeed = 0.95;
 
-      // Restrict vertical polar angle so it stays aesthetically upright
-      this.controls.minPolarAngle = Math.PI / 4;      // ~45 deg
       // Allow rotating up/down moderately
       this.controls.minPolarAngle = Math.PI / 4;        // ~45 deg
       this.controls.maxPolarAngle = (3 * Math.PI) / 4;  // ~135 deg
 
-      // Restrict horizontal azimuth angle so user doesn't flip it upside down
-      this.controls.minAzimuthAngle = -Math.PI / 1.8;
-      this.controls.maxAzimuthAngle = Math.PI / 1.8;
-      // Allow full 360° horizontal rotation so user can view both the folded back and the plain front!
+      // Allow full 360° horizontal rotation
       this.controls.minAzimuthAngle = -Infinity;
       this.controls.maxAzimuthAngle = Infinity;
     }
 
-    // 8. Event listeners
+    // 9. Event listeners
     this.handleResize = this.handleResize.bind(this);
     window.addEventListener('resize', this.handleResize);
 
-    // 9. Start continuous loop for smooth damping rotation
+    // 10. Start continuous loop for smooth damping rotation & zooming
     this.animate = this.animate.bind(this);
     this.animate();
   }
@@ -112,25 +127,16 @@ export class EnvelopeScene {
   private setupLighting(): void {
     const { lighting } = ENVELOPE_CONFIG;
 
-    // Ambient light
     const ambientLight = new THREE.AmbientLight(
       lighting.ambientColor,
       lighting.ambientIntensity
     );
     this.scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(
-    // Main directional light casting subtle crease shadows over flaps
     const mainLight = new THREE.DirectionalLight(
       lighting.directionalColor,
       lighting.directionalIntensity
     );
-    dirLight.position.set(...lighting.directionalPosition);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
-    dirLight.shadow.bias = -0.0005;
-    this.scene.add(dirLight);
     mainLight.position.set(2, 4, 5);
     mainLight.castShadow = true;
     mainLight.shadow.mapSize.width = 1024;
@@ -138,15 +144,13 @@ export class EnvelopeScene {
     mainLight.shadow.bias = -0.0002;
     this.scene.add(mainLight);
 
-    const fillLight = new THREE.DirectionalLight(
-      lighting.fillColor,
-      lighting.fillIntensity
-    );
-    fillLight.position.set(...lighting.fillPosition);
-    this.scene.add(fillLight);
-    // Secondary rim/fill light for the plain front side when rotated
-    const rimLight = new THREE.DirectionalLight('#fef3c7', 0.9);
-    rimLight.position.set(-2, -3, -5);
+    // Direct front lighting to illuminate the artwork vibrantly
+    const frontFillLight = new THREE.DirectionalLight('#fff5ea', 1.1);
+    frontFillLight.position.set(0, 0, -6);
+    this.scene.add(frontFillLight);
+
+    const rimLight = new THREE.DirectionalLight('#fef3c7', 0.6);
+    rimLight.position.set(-2, -3, 5);
     this.scene.add(rimLight);
   }
 
@@ -173,7 +177,7 @@ export class EnvelopeScene {
 
     this.camera.aspect = width / height;
     const isMobile = width < 640;
-    this.camera.position.z = isMobile ? 8.2 : 7.2;
+    this.camera.position.z = isMobile ? 7.6 : 6.8;
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(width, height);
@@ -193,6 +197,9 @@ export class EnvelopeScene {
     }
 
     this.guestTexture.dispose();
+    if (this.frontArtworkTexture) {
+      this.frontArtworkTexture.dispose();
+    }
     Object.values(this.materials).forEach((mat) => mat.dispose());
 
     this.scene.traverse((obj) => {

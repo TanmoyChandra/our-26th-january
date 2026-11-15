@@ -3,77 +3,68 @@ import { ENVELOPE_CONFIG } from '@/config/envelope';
 
 export interface EnvelopeMaterialsMap {
   paperExterior: THREE.MeshStandardMaterial;
-  paperInterior: THREE.MeshStandardMaterial;
-  seal: THREE.MeshStandardMaterial;
+  paperFrontArt: THREE.MeshStandardMaterial;
   paperFlap: THREE.MeshStandardMaterial;
   paperBacking: THREE.MeshStandardMaterial;
   nameSurface: THREE.MeshStandardMaterial;
 }
 
-/**
- * Creates and configures physical PBR materials for the 3D envelope.
- * These materials can be swapped or modified with custom textures later.
- */
-export function createEnvelopeMaterials(guestTexture: THREE.CanvasTexture): EnvelopeMaterialsMap {
+export function createEnvelopeMaterials(
+  guestTexture: THREE.CanvasTexture,
+  frontTexture?: THREE.Texture | null
+): EnvelopeMaterialsMap {
   const { materials } = ENVELOPE_CONFIG;
   const baseColor = new THREE.Color(materials.paperColor);
 
-  // Exterior paper with subtle natural matte kraft feel
+  // Exterior paper for back & sides
   const paperExterior = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(materials.paperColor),
     color: baseColor,
     roughness: materials.roughness,
     metalness: materials.metalness,
-    side: THREE.FrontSide,
     side: THREE.DoubleSide,
   });
 
-  const paperInterior = new THREE.MeshStandardMaterial({
-    // Slightly contrasted material for flaps to create realistic paper bevel creases
-    const paperFlap = new THREE.MeshStandardMaterial({
-      color: baseColor.clone().multiplyScalar(0.98),
-      roughness: materials.roughness,
-      metalness: materials.metalness,
-      side: THREE.DoubleSide,
-    });
+  // Plain side front face with custom artwork texture
+  const paperFrontArt = new THREE.MeshStandardMaterial({
+    map: frontTexture || null,
+    color: frontTexture ? 0xffffff : baseColor,
+    roughness: 0.78,
+    metalness: 0.05,
+    side: THREE.FrontSide,
+  });
 
-    const paperBacking = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(materials.innerColor),
-      roughness: 0.9,
-      roughness: 0.92,
-      metalness: 0.02,
-      side: THREE.BackSide,
-      side: THREE.DoubleSide,
-    });
+  // Flaps on back side
+  const paperFlap = new THREE.MeshStandardMaterial({
+    color: baseColor.clone().multiplyScalar(0.98),
+    roughness: materials.roughness,
+    metalness: materials.metalness,
+    side: THREE.DoubleSide,
+  });
 
-    const seal = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(materials.sealColor),
-      roughness: 0.35,
-      metalness: 0.65,
-    });
+  const paperBacking = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(materials.innerColor),
+    roughness: 0.92,
+    metalness: 0.02,
+    side: THREE.DoubleSide,
+  });
 
-    // Dedicated surface for the personalized guest name CanvasTexture
-    // Personalized guest name mapped on the plain front face
-    const nameSurface = new THREE.MeshStandardMaterial({
-      map: guestTexture,
-      transparent: true,
-      roughness: 0.8,
-      metalness: 0.05,
-      roughness: 0.85,
-      metalness: 0.02,
-      polygonOffset: true,
-      polygonOffsetFactor: -1,
-      polygonOffsetUnits: -1,
-      side: THREE.DoubleSide,
-    });
+  // Personalized guest name mapped right next to "প্রতি,"
+  const nameSurface = new THREE.MeshStandardMaterial({
+    map: guestTexture,
+    transparent: true,
+    roughness: 0.8,
+    metalness: 0.02,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
+    side: THREE.DoubleSide,
+  });
 
-    return {
-      paperExterior,
-      paperInterior,
-      seal,
-      paperFlap,
-      paperBacking,
-      nameSurface,
-    };
-  }
-
+  return {
+    paperExterior,
+    paperFrontArt,
+    paperFlap,
+    paperBacking,
+    nameSurface,
+  };
+}

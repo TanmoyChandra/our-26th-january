@@ -4,11 +4,21 @@ const VALID_CATEGORIES: InvitationCategory[] = ['family', 'general'];
 
 /**
  * Capitalise first letter of each word.
+ * Preserves connecting words like "and", "&", "o" nicely.
  */
 export function toDisplayName(raw: string): string {
-  return decodeURIComponent(raw)
+  const decoded = decodeURIComponent(raw).replace(/\+/g, ' ');
+
+  return decoded
     .split(/[\s_-]+/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .map((w, idx) => {
+      const lower = w.toLowerCase();
+      // Keep "&" or lowercase "and" if desired, or capitalize cleanly
+      if (lower === '&' || lower === 'and') {
+        return '&';
+      }
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    })
     .join(' ')
     .trim();
 }

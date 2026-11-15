@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Great_Vibes } from 'next/font/google';
 import { MotionProvider } from '@/components/providers/MotionProvider';
 import './globals.css';
 import '@/styles/animations.css';
@@ -8,6 +8,13 @@ const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
+});
+
+const greatVibes = Great_Vibes({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-cursive',
 });
 
 export const metadata: Metadata = {
@@ -31,7 +38,7 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${greatVibes.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
         <MotionProvider>
           {children}

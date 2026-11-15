@@ -7,8 +7,12 @@ export interface GuestNameTextureOptions {
 }
 
 /**
- * Creates and updates a high-resolution CanvasTexture containing the personalized guest name.
- * Supports Indian script / Unicode fonts with high crispness and correct anisotropic filtering.
+ * Creates and updates a high-resolution CanvasTexture containing:
+ * - "To.." written in elegant cursive / serif script, left-aligned at the top of the names block.
+ * - The guest names rendered below in cursive script.
+ * - "To.." in a clean, elegant normal serif font (non-cursive), left-aligned.
+ * - The guest names in flowing cursive script below.
+ * - Entire block positioned nicely to the left in the open envelope area.
  */
 export class GuestNameTexture {
   private canvas: HTMLCanvasElement;
@@ -16,10 +20,9 @@ export class GuestNameTexture {
   private texture: THREE.CanvasTexture;
 
   constructor(options: GuestNameTextureOptions) {
-    const { canvasWidth, canvasHeight } = ENVELOPE_CONFIG.guestName;
     this.canvas = document.createElement('canvas');
-    this.canvas.width = canvasWidth;
-    this.canvas.height = canvasHeight;
+    this.canvas.width = 2048;
+    this.canvas.height = 1286;
 
     const context = this.canvas.getContext('2d');
     if (!context) {
@@ -33,6 +36,12 @@ export class GuestNameTexture {
     this.texture.minFilter = THREE.LinearMipmapLinearFilter;
     this.texture.magFilter = THREE.LinearFilter;
 
+    if (typeof document !== 'undefined' && document.fonts) {
+      document.fonts.ready.then(() => {
+        this.update(options);
+      });
+    }
+
     this.update(options);
   }
 
@@ -40,64 +49,83 @@ export class GuestNameTexture {
     return this.texture;
   }
 
-  /**
-   * Redraws the guest name on the canvas and triggers texture update.
-   */
-  public update({ displayName, category }: GuestNameTextureOptions): void {
+  private parseLines(displayName: string): string[] {
+    const rawSegments = displayName
+      .split(/\s*(?:&|\band\b|\bwith\b|\+|\n|,)\s*/i)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    return rawSegments.length > 0 ? rawSegments : [displayName];
+  }
+
+  public update({ displayName }: GuestNameTextureOptions): void {
     const { width, height } = this.canvas;
-    const cfg = ENVELOPE_CONFIG.guestName;
 
     this.ctx.clearRect(0, 0, width, height);
 
-    // Subtle fine border frame on envelope front
+    const lines = this.parseLines(displayName);
+
     this.ctx.save();
-    this.ctx.strokeStyle = 'rgba(191, 160, 104, 0.35)'; // gold trim
-    this.ctx.lineWidth = 2;
-    this.ctx.strokeRect(30, 30, width - 60, height - 60);
 
-    // Corner decorative accents
-    const cornerSize = 18;
-    this.ctx.fillStyle = 'rgba(191, 160, 104, 0.6)';
-    // Top-left
-    this.ctx.fillRect(26, 26, cornerSize, 3);
-    this.ctx.fillRect(26, 26, 3, cornerSize);
-    // Top-right
-    this.ctx.fillRect(width - 26 - cornerSize, 26, cornerSize, 3);
-    this.ctx.fillRect(width - 29, 26, 3, cornerSize);
-    // Bottom-left
-    this.ctx.fillRect(26, height - 29, cornerSize, 3);
-    this.ctx.fillRect(26, height - 26 - cornerSize, 3, cornerSize);
-    // Bottom-right
-    this.ctx.fillRect(width - 26 - cornerSize, height - 29, cornerSize, 3);
-    this.ctx.fillRect(width - 29, height - 26 - cornerSize, 3, cornerSize);
+    // Soft warm crimson red ink
+    this.ctx.fillStyle = '#8a2b34';
 
-    // Center alignment
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
+    // Shifted slightly to the left: 48% across the width
+    const targetCenterX = width * 0.50;
+    const targetCenterY = height * 0.50;
 
-    // Subtitle / Label
-    this.ctx.font = `italic ${cfg.subfontSize}px "Georgia", serif`;
-    this.ctx.fillStyle = cfg.subtextColor;
-    this.ctx.fillText('Personal Invitation For', width / 2, height / 2 - 50);
-
-    // Primary Guest Name (handles Unicode / long names)
-    let fontSize = cfg.fontSize;
-    if (displayName.length > 22) {
-      fontSize = Math.floor(cfg.fontSize * 0.75);
-    } else if (displayName.length > 15) {
-      fontSize = Math.floor(cfg.fontSize * 0.88);
+    let fontSize = 104;
+    if (lines.length === 1) {
+      fontSize = 120;
+    } else if (lines.length > 2) {
+      fontSize = 86;
     }
 
-    this.ctx.font = `${cfg.fontWeight} ${fontSize}px ${cfg.fontFamily}`;
-    this.ctx.fillStyle = cfg.textColor;
-    this.ctx.fillText(displayName, width / 2, height / 2 + 10);
+    for (const line of lines) {
+      if (line.length > 18) {
+        fontSize = Math.min(fontSize, 82);
+      } else if (line.length > 14) {
+        fontSize = Math.min(fontSize, 94);
+      }
+    }
 
-    // Category / Tag
-    const categoryLabel = category === 'family' ? '— FAMILY INVITATION —' : '— CORDIAL INVITATION —';
-    this.ctx.font = `500 16px "Inter", "Helvetica", sans-serif`;
-    this.ctx.fillStyle = 'rgba(143, 131, 119, 0.85)';
-    this.ctx.letterSpacing = '0.18em';
-    this.ctx.fillText(categoryLabel, width / 2, height / 2 + 65);
+    const cursiveFont = '"Great Vibes", "Alex Brush", "Snell Roundhand", "Apple Chancery", cursive';
+    this.ctx.font = `normal ${fontSize}px ${cursiveFont}`;
+
+    const lineHeight = fontSize * 1.16;
+    const totalNamesHeight = (lines.length - 1) * lineHeight;
+
+    // Measure maximum name width to accurately determine the left edge of the block
+    // Measure maximum name width to find the left boundary
+    let maxNameWidth = 0;
+    lines.forEach((line) => {
+      const metrics = this.ctx.measureText(line);
+      if (metrics.width > maxNameWidth) {
+        maxNameWidth = metrics.width;
+      }
+    });
+
+    const blockLeftX = targetCenterX - maxNameWidth / 2;
+    const namesStartY = targetCenterY - totalNamesHeight / 2 + 20;
+
+    // 1. "To.." in clean, normal serif font (non-cursive, left-aligned)
+    this.ctx.textAlign = 'left';
+    this.ctx.textBaseline = 'bottom';
+    const toFontSize = Math.round(fontSize * 0.48);
+    this.ctx.font = `normal 500 ${toFontSize}px "Cinzel", "Playfair Display", "Georgia", "Times New Roman", serif`;
+    // Generous breathing space (gap) between "To.." and the first name
+    const toY = namesStartY - fontSize * 0.85;
+    this.ctx.fillText('To..', blockLeftX, toY);
+
+    // 2. Guest Names rendered below in cursive script
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    this.ctx.font = `normal ${fontSize}px ${cursiveFont}`;
+
+    lines.forEach((line, index) => {
+      const y = namesStartY + index * lineHeight;
+      this.ctx.fillText(line, targetCenterX, y);
+    });
 
     this.ctx.restore();
 
@@ -108,4 +136,3 @@ export class GuestNameTexture {
     this.texture.dispose();
   }
 }
-

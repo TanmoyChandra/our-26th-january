@@ -27,6 +27,7 @@ export interface EnvelopeConfig {
     metalness: number;
     innerColor: string;
     shadowEdgeColor: string;
+    frontTexturePath: string;
   };
   guestName: {
     canvasWidth: number;
@@ -51,46 +52,47 @@ export interface EnvelopeConfig {
 
 export const ENVELOPE_CONFIG: EnvelopeConfig = {
   dimensions: {
-    width: 5.0,
-    height: 3.3,
+    width: 4.8,
+    height: 3.014, // Exact 1024:643 aspect ratio (1.5925)
     depth: 0.04,
     flapOverlap: 0.12,
   },
   camera: {
-    fov: 42,
+    fov: 44,
     near: 0.1,
     far: 100,
-    initialPosition: [0, 0, 7.5],
+    initialPosition: [0, 0, 7.2],
   },
   lighting: {
     ambientColor: '#ffffff',
-    ambientIntensity: 0.85,
+    ambientIntensity: 0.95,
     directionalColor: '#fff8ea',
-    directionalIntensity: 1.5,
+    directionalIntensity: 1.4,
     directionalPosition: [3.5, 6, 6],
     fillColor: '#f1f5f9',
     fillIntensity: 0.45,
     fillPosition: [-4, -3, 3],
   },
   materials: {
-    paperColor: '#c8b493', // Warm kraft/natural paper tone exactly like the photo
-    roughness: 0.88,
-    metalness: 0.03,
-    innerColor: '#ba9f79',
-    shadowEdgeColor: '#a78b64',
+    paperColor: '#ebd7b2', // Matches the warm golden-ivory tone of the new artwork
+    roughness: 0.82,
+    metalness: 0.04,
+    innerColor: '#dfc59e',
+    shadowEdgeColor: '#ba9f79',
+    frontTexturePath: '/textures/envelope/envelope_front.jpg',
   },
   guestName: {
-    canvasWidth: 1024,
-    canvasHeight: 512,
-    fontFamily: '"Cinzel", "Playfair Display", "Noto Serif", "Georgia", serif',
-    fontSize: 52,
+    canvasWidth: 2048,
+    canvasHeight: 1286,
+    fontFamily: '"Great Vibes", "Alex Brush", "Snell Roundhand", "Apple Chancery", cursive',
+    fontSize: 98,
     fontWeight: '400',
-    textColor: '#2e251a',
-    subtextColor: '#70604b',
-    subfontSize: 22,
-    letterSpacing: '0.12em',
-    position: [0, 0, -0.021], // Plain front face center
-    size: [3.8, 1.9],
+    textColor: '#8a2b34', // Soft warm crimson red ink
+    subtextColor: 'rgba(110, 40, 30, 0.75)',
+    subfontSize: 24,
+    letterSpacing: '0.02em',
+    position: [0, 0, -0.021],
+    size: [4.8, 3.014],
   },
   animation: {
     maxFlapAngle: Math.PI * 0.98,

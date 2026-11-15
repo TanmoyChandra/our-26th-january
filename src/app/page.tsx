@@ -6,14 +6,15 @@ import Link from 'next/link';
 export const dynamic = "force-dynamic";
 
 interface HomePageProps {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; guest?: string; name?: string }>;
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const { type } = await searchParams;
+  const { type, guest, name } = await searchParams;
 
-  // Default guest for the homepage presentation experience
-  const guestInfo = buildGuestInfo('Guest', type);
+  // Allows checking customized names on root url (?name=Tanmoy+Chandra or ?guest=...)
+  const guestSlug = guest || name || 'Guest';
+  const guestInfo = buildGuestInfo(guestSlug, type);
   const visibleEvents = getVisibleEvents(guestInfo.category);
   const config = getInvitationConfig();
 
