@@ -238,7 +238,7 @@ export class EnvelopeScene {
       // Step 1: Paper slides all the way back down into the envelope first
       tl.to(this.modelParts.cardGroup.position, {
         y: 0,
-        z: 0.010,
+        z: 0.007,
         duration: 0.75,
         ease: 'power2.inOut',
       }, 0);

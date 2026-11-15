@@ -25,6 +25,25 @@ export interface EnvelopeModelParts {
  *   4. Top Flap Hinge: pivots up and back to -Z so the card is clearly IN FRONT of the flap
  *   5. Back Pocket: z = +depth/2 (+0.02)
  */
+/**
+ * Helper to construct a crisp rounded rectangle shape for die-cut luxury cards.
+ */
+function createRoundedRectShape(w: number, h: number, r: number): THREE.Shape {
+  const shape = new THREE.Shape();
+  const x = -w / 2;
+  const y = -h / 2;
+  shape.moveTo(x + r, y);
+  shape.lineTo(x + w - r, y);
+  shape.quadraticCurveTo(x + w, y, x + w, y + r);
+  shape.lineTo(x + w, y + h - r);
+  shape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  shape.lineTo(x + r, y + h);
+  shape.quadraticCurveTo(x, y + h, x, y + h - r);
+  shape.lineTo(x, y + r);
+  shape.quadraticCurveTo(x, y, x + r, y);
+  return shape;
+}
+
 export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeModelParts {
   const root = new THREE.Group();
   root.name = 'EnvelopeRoot';
@@ -79,15 +98,28 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   topFlapMesh.receiveShadow = true;
   topFlapHinge.add(topFlapMesh);
 
-  // 4. INNER INVITATION CARD (Sits inside pocket, emerges to sit ON TOP of flap)
+  // 4. INNER INVITATION CARD (3D thick cardstock with subtle rounded corners)
   const cardGroup = new THREE.Group();
   cardGroup.name = 'InnerCardGroup';
-  cardGroup.position.set(0, 0, 0.01);
+  cardGroup.position.set(0, 0, 0.007);
   root.add(cardGroup);
 
   const cardW = width * 0.86;
   const cardH = height * 0.96;
-  const cardGeo = new THREE.PlaneGeometry(cardW, cardH);
+  const cornerRadius = 0.07; // subtle elegant rounded corners
+  const cardShape = createRoundedRectShape(cardW, cardH, cornerRadius);
+
+  const cardGeo = new THREE.ExtrudeGeometry(cardShape, {
+    depth: 0.014,
+    bevelEnabled: true,
+    bevelSegments: 3,
+    steps: 1,
+    bevelSize: 0.003,
+    bevelThickness: 0.003,
+    curveSegments: 16,
+  });
+  cardGeo.center(); // center geometry around (0, 0, 0)
+
   const cardMesh = new THREE.Mesh(cardGeo, materials.cardPaper);
   cardMesh.name = 'InnerCardMesh';
   cardMesh.renderOrder = 3;
