@@ -193,38 +193,42 @@ export class EnvelopeScene {
 
     if (this.isOpen) {
       // 1. OPENING SEQUENCE:
-      // Flap swings up and backwards (+X rotation) behind the envelope and inner card.
-      // Hinge shifts to z = -0.010, so the entire flap sits in the BACK layer behind the card.
-      const targetFlapAngle = Math.PI * 0.96;
-      const targetFlapZ = -0.010;
+      // Flap swings open naturally UP and OUTWARDS towards the viewer (-X rotation),
+      // then folds back over the top fold line behind the envelope (-Math.PI * 1.06).
+      // Hinge shifts to z = -0.012, so the entire opened triangle flap rests in the BACK layer.
+      const targetFlapAngle = -Math.PI * 1.06;
+      const targetFlapZ = -0.012;
       const targetCardY = 1.75;
       const targetCardZ = 0.015;
 
       // Animate Top Flap Opening around hinge and shift Z behind card
       gsap.to(this.modelParts.topFlapHinge.rotation, {
         x: targetFlapAngle,
-        duration: 1.05,
+        duration: 1.1,
         ease: 'power2.inOut',
       });
 
       gsap.to(this.modelParts.topFlapHinge.position, {
         z: targetFlapZ,
-        duration: 1.05,
+        duration: 1.1,
         ease: 'power2.inOut',
-        onStart: () => {
-          // Immediately place triangle flap in back layer behind card and pocket
-          this.modelParts.topFlapMesh.renderOrder = 2;
-          this.modelParts.cardMesh.renderOrder = 4;
-          this.modelParts.backPocketMesh.renderOrder = 5;
-        },
       });
 
-      // Animate Card Emergence: slides up to sit on the TOP layer in front of the triangle flap
+      // Halfway through the flap swing (as it reaches the top), assign back layer order
+      gsap.delayedCall(0.45, () => {
+        if (this.isOpen) {
+          this.modelParts.topFlapMesh.renderOrder = 2; // Triangle flap in back layer
+          this.modelParts.cardMesh.renderOrder = 4;    // Paper card on top layer
+          this.modelParts.backPocketMesh.renderOrder = 5;
+        }
+      });
+
+      // Animate Card Emergence: slides up to sit on the TOP layer in front of the opened flap
       gsap.to(this.modelParts.cardGroup.position, {
         y: targetCardY,
         z: targetCardZ,
         duration: 1.25,
-        delay: 0.35,
+        delay: 0.45,
         ease: 'power2.out',
       });
     } else {
@@ -233,25 +237,25 @@ export class EnvelopeScene {
       gsap.to(this.modelParts.cardGroup.position, {
         y: 0,
         z: 0.010,
-        duration: 0.85,
+        duration: 0.8,
         ease: 'power2.inOut',
       });
 
-      // Flap rotates back down and comes forward to sit on top of pocket
+      // Flap rotates back down towards the viewer and seals shut over the pocket
       gsap.to(this.modelParts.topFlapHinge.rotation, {
         x: 0,
         duration: 0.95,
-        delay: 0.3,
+        delay: 0.35,
         ease: 'power2.inOut',
       });
 
       gsap.to(this.modelParts.topFlapHinge.position, {
         z: 0.023,
         duration: 0.95,
-        delay: 0.3,
+        delay: 0.35,
         ease: 'power2.inOut',
         onComplete: () => {
-          // Flap is now closed over the pocket
+          // Flap is now closed over the pocket on top
           this.modelParts.topFlapMesh.renderOrder = 5;
           this.modelParts.backPocketMesh.renderOrder = 4;
           this.modelParts.cardMesh.renderOrder = 3;
