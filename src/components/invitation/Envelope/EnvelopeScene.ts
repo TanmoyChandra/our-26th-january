@@ -250,7 +250,10 @@ export class EnvelopeScene {
 
     if (this.isOpen) {
       // 1. OPENING SEQUENCE:
-      // STRICT ORDER: First the envelope opens completely. THEN the paper comes out.
+      // STRICT ORDER:
+      // Step 1: Smoothly orient to the back face (y = 0) where the flap opening action happens
+      // Step 2: Flap opens completely
+      // Step 3: Paper card emerges on top layer
       const targetFlapAngle = -Math.PI * 1.06;
       const targetFlapZ = -0.020;
       const targetCardY = 1.82;
@@ -258,18 +261,32 @@ export class EnvelopeScene {
 
       const tl = gsap.timeline();
 
-      // Step 1: Flap lifts up-forward and folds back behind the envelope
+      // Step 1: Smoothly orient to back flap side
+      tl.to(this.modelParts.root.rotation, {
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: 0.65,
+        ease: 'power2.inOut',
+      }, 0);
+      tl.to(this.modelParts.root.position, {
+        y: 0,
+        duration: 0.5,
+        ease: 'power2.out',
+      }, 0);
+
+      // Step 2: Flap lifts up-forward and folds back behind the envelope
       tl.to(this.modelParts.topFlapHinge.rotation, {
         x: targetFlapAngle,
         duration: 0.95,
         ease: 'power2.inOut',
-      }, 0);
+      }, '>-0.05');
 
       tl.to(this.modelParts.topFlapHinge.position, {
         z: targetFlapZ,
         duration: 0.95,
         ease: 'power2.inOut',
-      }, 0);
+      }, '<');
 
       // Layering: flap goes behind once it crosses the top fold
       tl.add(() => {
@@ -280,15 +297,15 @@ export class EnvelopeScene {
           this.modelParts.cardMesh.renderOrder = 4;    // Paper card on top layer
           this.modelParts.backPocketMesh.renderOrder = 5;
         }
-      }, 0.5);
+      }, '>-0.45');
 
-      // Step 2: ONLY after the flap is fully open, the paper card comes out!
+      // Step 3: ONLY after the flap is fully open, the paper card comes out!
       tl.to(this.modelParts.cardGroup.position, {
         y: targetCardY,
         z: targetCardZ,
         duration: 1.15,
         ease: 'power2.out',
-      }, '+=0.1');
+      }, '+=0.05');
 
       // Subtle 3D tilt as the card emerges to show its physical rim and catch specular light
       tl.to(this.modelParts.cardGroup.rotation, {
@@ -298,7 +315,8 @@ export class EnvelopeScene {
       }, '<');
     } else {
       // 2. CLOSING SEQUENCE:
-      // STRICT ORDER: First paper card slides completely inside, THEN flap closes over it.
+      // STRICT ORDER: First paper card slides completely inside, THEN flap closes over it,
+      // THEN envelope rotates back to the front face (Math.PI) showing the guest's name.
       const tl = gsap.timeline();
 
       // Step 1: Paper slides all the way back down into the envelope first
@@ -320,14 +338,13 @@ export class EnvelopeScene {
         x: 0,
         duration: 0.85,
         ease: 'power2.inOut',
-      }, '+=0.08');
+      }, '+=0.05');
 
       tl.to(this.modelParts.topFlapHinge.position, {
         z: closedFlapZ,
         duration: 0.85,
         ease: 'power2.inOut',
         onComplete: () => {
-          this.startTime = performance.now();
           // Flap is now closed over the pocket on top
           this.modelParts.topFlapMesh.renderOrder = 5;
           if (this.modelParts.topFlapBackMesh) this.modelParts.topFlapBackMesh.renderOrder = 5;
@@ -336,6 +353,18 @@ export class EnvelopeScene {
           this.modelParts.cardMesh.renderOrder = 3;
         },
       }, '<');
+
+      // Step 3: Rotate smoothly back to the front face (Math.PI) with the personalized name
+      tl.to(this.modelParts.root.rotation, {
+        x: 0,
+        y: Math.PI,
+        z: 0,
+        duration: 0.75,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          this.startTime = performance.now();
+        },
+      }, '+=0.05');
     }
 
     return this.isOpen;
@@ -395,9 +424,11 @@ export class EnvelopeScene {
       },
     });
 
+    const baseRotY = Math.PI;
+
     // 1. Tilt smoothly to the right and slightly forward
     this.giggleTimeline.to(this.modelParts.root.rotation, {
-      y: 0.28, // ~16 deg
+      y: baseRotY + 0.28, // ~16 deg
       x: 0.08, // ~4.5 deg
       z: 0.02,
       duration: 0.75,
@@ -406,7 +437,7 @@ export class EnvelopeScene {
 
     // 2. Sway smoothly across to the left, revealing the opposite 3D edge
     this.giggleTimeline.to(this.modelParts.root.rotation, {
-      y: -0.24, // ~-13.8 deg
+      y: baseRotY - 0.24, // ~-13.8 deg
       x: -0.05,
       z: -0.015,
       duration: 0.9,
@@ -415,7 +446,7 @@ export class EnvelopeScene {
 
     // 3. Gentle rebound back towards center
     this.giggleTimeline.to(this.modelParts.root.rotation, {
-      y: 0.08,
+      y: baseRotY + 0.08,
       x: 0.02,
       z: 0.005,
       duration: 0.6,
@@ -424,7 +455,7 @@ export class EnvelopeScene {
 
     // 4. Settle softly to center
     this.giggleTimeline.to(this.modelParts.root.rotation, {
-      y: 0,
+      y: baseRotY,
       x: 0,
       z: 0,
       duration: 0.55,
@@ -449,7 +480,7 @@ export class EnvelopeScene {
       !this.giggleTimeline
     ) {
       const elapsed = (performance.now() - this.startTime) * 0.001;
-      const targetRotY = Math.sin(elapsed * 1.5) * 0.055; // +/- 3.1 degrees subtle sway
+      const targetRotY = Math.PI + Math.sin(elapsed * 1.5) * 0.055; // subtle sway around Math.PI
       const targetRotX = Math.cos(elapsed * 1.1) * 0.03;  // +/- 1.7 degrees subtle nod
       const targetPosY = Math.sin(elapsed * 1.8) * 0.035; // gentle vertical float
 

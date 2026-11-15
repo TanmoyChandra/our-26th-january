@@ -406,8 +406,8 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   backPocketMesh.receiveShadow = true;
   root.add(backPocketMesh);
 
-  // Start with back side showing
-  root.rotation.y = 0;
+  // Initial presentation: Start with front side showing (personalized guest name & couple artwork)
+  root.rotation.y = Math.PI;
 
   return {
     root,
