@@ -32,6 +32,7 @@ export class EnvelopeScene {
   private isOpen = false;
   private isUserInteracting = false;
   private giggleTimeline: gsap.core.Timeline | null = null;
+  private openTimeline: gsap.core.Timeline | null = null;
   private entranceGiggleDone = false;
   private startTime = performance.now();
 
@@ -218,32 +219,29 @@ export class EnvelopeScene {
 
   /**
    * Smoothly animates the flap open/closed and slides the card out.
-   * Flap flips back behind the card, and the emerging card stays in the TOP layer.
+   * Whatever angle the card/camera is currently at, it first smoothly brings
+   * the view to the back side of the envelope squarely in front of the camera,
+   * AND THEN ONLY does the flap open, followed by the card sliding out.
    */
   public toggleOpen(): boolean {
     if (this.isDisposed) return this.isOpen;
     this.isOpen = !this.isOpen;
 
-    // Stop any entrance teaser or idle animation immediately
+    // Stop any entrance teaser or previous transition timeline immediately
     if (this.giggleTimeline) {
       this.giggleTimeline.kill();
       this.giggleTimeline = null;
     }
+
+    if (this.openTimeline) {
+      this.openTimeline.kill();
+      this.openTimeline = null;
+    }
     this.entranceGiggleDone = true;
 
-    // Smoothly orient to the back face where the opening action happens
-    gsap.to(this.modelParts.root.rotation, {
-      x: 0,
-      y: 0,
-      z: 0,
-      duration: 0.5,
-      ease: 'power2.out',
-    });
-    gsap.to(this.modelParts.root.position, {
-      y: 0,
-      duration: 0.5,
-      ease: 'power2.out',
-    });
+    const width = this.container.clientWidth || window.innerWidth;
+    const height = this.container.clientHeight || window.innerHeight;
+    const targetZ = this.calculateCameraDistance(width, height);
 
     const zBack = ENVELOPE_CONFIG.dimensions.depth / 2;
     const closedFlapZ = zBack + 0.003;
@@ -251,36 +249,85 @@ export class EnvelopeScene {
     if (this.isOpen) {
       // 1. OPENING SEQUENCE:
       // STRICT ORDER:
-      // Step 1: Smoothly orient to the back face (y = 0) where the flap opening action happens
-      // Step 2: Flap opens completely
-      // Step 3: Paper card emerges on top layer
+      // Phase 1: Whatever angle it is at, smoothly bring the back side of the envelope directly to face the camera
+      // Phase 2: THEN AND ONLY THEN, the flap opens
+      // Phase 3: THEN AND ONLY THEN, the card slides out
+
+      if (this.controls) this.controls.enabled = false;
+
+      const spherical = new THREE.Spherical().setFromVector3(this.camera.position);
+      // Shortest angular path around spherical theta to 0 (front-facing on Z axis)
+      const deltaTheta = Math.atan2(Math.sin(0 - spherical.theta), Math.cos(0 - spherical.theta));
+      const endTheta = spherical.theta + deltaTheta;
+
+      // Shortest angular path for root.rotation.y to 0 (back face pointing directly to +Z)
+      const deltaRootY = Math.atan2(Math.sin(0 - this.modelParts.root.rotation.y), Math.cos(0 - this.modelParts.root.rotation.y));
+      const endRootY = this.modelParts.root.rotation.y + deltaRootY;
+
+      const animState = {
+        radius: spherical.radius,
+        phi: spherical.phi,
+        theta: spherical.theta,
+        rotX: this.modelParts.root.rotation.x,
+        rotY: this.modelParts.root.rotation.y,
+        rotZ: this.modelParts.root.rotation.z,
+        posX: this.modelParts.root.position.x,
+        posY: this.modelParts.root.position.y,
+        posZ: this.modelParts.root.position.z,
+      };
+
       const targetFlapAngle = -Math.PI * 1.06;
       const targetFlapZ = -0.020;
       const targetCardY = 1.82;
       const targetCardZ = 0.022;
 
-      const tl = gsap.timeline();
+      const tl = gsap.timeline({
+        onComplete: () => {
+          if (this.controls) this.controls.enabled = true;
+          this.openTimeline = null;
+        },
+      });
+      this.openTimeline = tl;
 
-      // Step 1: Smoothly orient to back flap side
-      tl.to(this.modelParts.root.rotation, {
-        x: 0,
-        y: 0,
-        z: 0,
-        duration: 0.65,
+      // Phase 1: Smoothly orient envelope & camera so back side faces viewer squarely
+      tl.to(animState, {
+        radius: targetZ,
+        phi: Math.PI / 2,
+        theta: endTheta,
+        rotX: 0,
+        rotY: endRootY,
+        rotZ: 0,
+        posX: 0,
+        posY: 0,
+        posZ: 0,
+        duration: 0.85,
         ease: 'power2.inOut',
-      }, 0);
-      tl.to(this.modelParts.root.position, {
-        y: 0,
-        duration: 0.5,
-        ease: 'power2.out',
-      }, 0);
+        onUpdate: () => {
+          const tempSpherical = new THREE.Spherical(animState.radius, animState.phi, animState.theta);
+          tempSpherical.makeSafe();
+          this.camera.position.setFromSpherical(tempSpherical);
+          this.camera.lookAt(0, 0, 0);
+          this.modelParts.root.rotation.set(animState.rotX, animState.rotY, animState.rotZ);
+          this.modelParts.root.position.set(animState.posX, animState.posY, animState.posZ);
+        },
+        onComplete: () => {
+          this.modelParts.root.rotation.set(0, 0, 0);
+          this.modelParts.root.position.set(0, 0, 0);
+          this.camera.position.set(0, 0, targetZ);
+          this.camera.lookAt(0, 0, 0);
+          if (this.controls) {
+            this.controls.target.set(0, 0, 0);
+            this.controls.update();
+          }
+        },
+      });
 
-      // Step 2: Flap lifts up-forward and folds back behind the envelope
+      // Phase 2: THEN AND ONLY THEN (after Phase 1 is 100% finished), the flap begins opening!
       tl.to(this.modelParts.topFlapHinge.rotation, {
         x: targetFlapAngle,
         duration: 0.95,
         ease: 'power2.inOut',
-      }, '>-0.05');
+      });
 
       tl.to(this.modelParts.topFlapHinge.position, {
         z: targetFlapZ,
@@ -297,15 +344,15 @@ export class EnvelopeScene {
           this.modelParts.cardMesh.renderOrder = 4;    // Paper card on top layer
           this.modelParts.backPocketMesh.renderOrder = 5;
         }
-      }, '>-0.45');
+      }, '-=0.45');
 
-      // Step 3: ONLY after the flap is fully open, the paper card comes out!
+      // Phase 3: THEN AND ONLY THEN (after flap is fully opened), the paper card slides out!
       tl.to(this.modelParts.cardGroup.position, {
         y: targetCardY,
         z: targetCardZ,
         duration: 1.15,
         ease: 'power2.out',
-      }, '+=0.05');
+      }, '+=0.08');
 
       // Subtle 3D tilt as the card emerges to show its physical rim and catch specular light
       tl.to(this.modelParts.cardGroup.rotation, {
@@ -317,7 +364,15 @@ export class EnvelopeScene {
       // 2. CLOSING SEQUENCE:
       // STRICT ORDER: First paper card slides completely inside, THEN flap closes over it,
       // THEN envelope rotates back to the front face (Math.PI) showing the guest's name.
-      const tl = gsap.timeline();
+      if (this.controls) this.controls.enabled = false;
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          if (this.controls) this.controls.enabled = true;
+          this.openTimeline = null;
+        },
+      });
+      this.openTimeline = tl;
 
       // Step 1: Paper slides all the way back down into the envelope first
       tl.to(this.modelParts.cardGroup.position, {
@@ -355,13 +410,43 @@ export class EnvelopeScene {
       }, '<');
 
       // Step 3: Rotate smoothly back to the front face (Math.PI) with the personalized name
-      tl.to(this.modelParts.root.rotation, {
-        x: 0,
-        y: Math.PI,
-        z: 0,
-        duration: 0.75,
+      const sphericalClose = new THREE.Spherical().setFromVector3(this.camera.position);
+      const deltaThetaClose = Math.atan2(Math.sin(0 - sphericalClose.theta), Math.cos(0 - sphericalClose.theta));
+      const endThetaClose = sphericalClose.theta + deltaThetaClose;
+
+      const deltaRootYClose = Math.atan2(Math.sin(Math.PI - this.modelParts.root.rotation.y), Math.cos(Math.PI - this.modelParts.root.rotation.y));
+      const endRootYClose = this.modelParts.root.rotation.y + deltaRootYClose;
+
+      const animCloseState = {
+        radius: sphericalClose.radius,
+        phi: sphericalClose.phi,
+        theta: sphericalClose.theta,
+        rotY: this.modelParts.root.rotation.y,
+      };
+
+      tl.to(animCloseState, {
+        radius: targetZ,
+        phi: Math.PI / 2,
+        theta: endThetaClose,
+        rotY: endRootYClose,
+        duration: 0.85,
         ease: 'power2.inOut',
+        onUpdate: () => {
+          const tempSpherical = new THREE.Spherical(animCloseState.radius, animCloseState.phi, animCloseState.theta);
+          tempSpherical.makeSafe();
+          this.camera.position.setFromSpherical(tempSpherical);
+          this.camera.lookAt(0, 0, 0);
+          this.modelParts.root.rotation.y = animCloseState.rotY;
+        },
         onComplete: () => {
+          this.modelParts.root.rotation.set(0, Math.PI, 0);
+          this.camera.position.set(0, 0, targetZ);
+          this.camera.lookAt(0, 0, 0);
+          if (this.controls) {
+            this.controls.target.set(0, 0, 0);
+            this.controls.update();
+            this.controls.enabled = true;
+          }
           this.startTime = performance.now();
         },
       }, '+=0.05');
@@ -523,6 +608,11 @@ export class EnvelopeScene {
     if (this.giggleTimeline) {
       this.giggleTimeline.kill();
       this.giggleTimeline = null;
+    }
+
+    if (this.openTimeline) {
+      this.openTimeline.kill();
+      this.openTimeline = null;
     }
 
     if (this.animationFrameId !== null) {
