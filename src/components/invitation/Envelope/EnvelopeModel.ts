@@ -11,6 +11,8 @@ export interface EnvelopeModelParts {
   backPocketMesh: THREE.Mesh;
   topFlapHinge: THREE.Group;
   topFlapMesh: THREE.Mesh;
+  topFlapBackMesh: THREE.Mesh;
+  topFlapEdgeMesh: THREE.Mesh;
   nameMesh: THREE.Mesh;
   rimMesh: THREE.Mesh;
 }
@@ -124,6 +126,52 @@ function createEnvelopeRimGeometry(w: number, h: number, depth: number, r: numbe
 }
 
 /**
+ * Creates a 3D rim edge along the V-shape contour of the opening flap,
+ * giving the flap genuine physical cardstock thickness.
+ */
+function createFlapEdgeGeometry(w: number, tipY: number, thickness: number): THREE.BufferGeometry {
+  const halfW = w / 2;
+  const halfT = thickness / 2;
+
+  // Path along the V-edge: (-halfW, 0) -> (0, tipY) -> (halfW, 0)
+  const path = [
+    new THREE.Vector2(-halfW, 0),
+    new THREE.Vector2(0, tipY),
+    new THREE.Vector2(halfW, 0),
+  ];
+
+  const vertices: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+
+  for (let i = 0; i < path.length; i++) {
+    const p = path[i];
+    vertices.push(p.x, p.y, -halfT);
+    uvs.push(i / (path.length - 1), 0);
+    vertices.push(p.x, p.y, +halfT);
+    uvs.push(i / (path.length - 1), 1);
+  }
+
+  for (let i = 0; i < path.length - 1; i++) {
+    const i0 = i * 2;
+    const i1 = i0 + 1;
+    const i2 = (i + 1) * 2;
+    const i3 = i2 + 1;
+
+    indices.push(i0, i2, i1);
+    indices.push(i1, i2, i3);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+
+  return geo;
+}
+
+/**
  * Accurately models the physical envelope matching both uploaded artworks:
  * - Subtle rounded corners on all edges.
  * - Solid physical thickness along all sides (rim wall).
@@ -187,15 +235,42 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   topFlapHinge.position.set(0, halfH, zBack + 0.003);
   root.add(topFlapHinge);
 
+  const flapThickness = 0.008; // Physical luxury cardstock thickness
+  const halfFlapT = flapThickness / 2;
+  const flapTipY = -height * (420 / 643); // Matches the exact lotus triangle tip
+
+  // 3a. Front Face of Flap (facing viewer when closed)
   const flapGeo = new THREE.PlaneGeometry(width, height);
   flapGeo.translate(0, -halfH, 0); // pivots around top edge
 
   const topFlapMesh = new THREE.Mesh(flapGeo, materials.flapArt);
   topFlapMesh.name = 'TopFlapMesh';
+  topFlapMesh.position.set(0, 0, halfFlapT);
   topFlapMesh.renderOrder = 5; // Starts in front of pocket when closed
   topFlapMesh.castShadow = true;
   topFlapMesh.receiveShadow = true;
   topFlapHinge.add(topFlapMesh);
+
+  // 3b. Back Face of Flap (separated by thickness, facing viewer when open)
+  const flapBackGeo = new THREE.PlaneGeometry(width, height);
+  flapBackGeo.translate(0, -halfH, 0);
+
+  const topFlapBackMesh = new THREE.Mesh(flapBackGeo, materials.flapArt);
+  topFlapBackMesh.name = 'TopFlapBackMesh';
+  topFlapBackMesh.position.set(0, 0, -halfFlapT);
+  topFlapBackMesh.renderOrder = 5;
+  topFlapBackMesh.castShadow = true;
+  topFlapBackMesh.receiveShadow = true;
+  topFlapHinge.add(topFlapBackMesh);
+
+  // 3c. 3D Edge Wall along the V-shape contour of the opening flap
+  const flapEdgeGeo = createFlapEdgeGeometry(width, flapTipY, flapThickness);
+  const topFlapEdgeMesh = new THREE.Mesh(flapEdgeGeo, materials.paperExterior);
+  topFlapEdgeMesh.name = 'TopFlapEdgeMesh';
+  topFlapEdgeMesh.renderOrder = 5;
+  topFlapEdgeMesh.castShadow = true;
+  topFlapEdgeMesh.receiveShadow = true;
+  topFlapHinge.add(topFlapEdgeMesh);
 
   // 4. INNER INVITATION CARD: realistic thick stationery board with subtle rounded corners
   const cardGroup = new THREE.Group();
@@ -257,6 +332,8 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
     backPocketMesh,
     topFlapHinge,
     topFlapMesh,
+    topFlapBackMesh,
+    topFlapEdgeMesh,
     nameMesh,
     rimMesh,
   };

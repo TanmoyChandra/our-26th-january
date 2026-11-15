@@ -221,6 +221,8 @@ export class EnvelopeScene {
       tl.add(() => {
         if (this.isOpen) {
           this.modelParts.topFlapMesh.renderOrder = 2; // Triangle flap in back layer
+          if (this.modelParts.topFlapBackMesh) this.modelParts.topFlapBackMesh.renderOrder = 2;
+          if (this.modelParts.topFlapEdgeMesh) this.modelParts.topFlapEdgeMesh.renderOrder = 2;
           this.modelParts.cardMesh.renderOrder = 4;    // Paper card on top layer
           this.modelParts.backPocketMesh.renderOrder = 5;
         }
@@ -260,6 +262,8 @@ export class EnvelopeScene {
         onComplete: () => {
           // Flap is now closed over the pocket on top
           this.modelParts.topFlapMesh.renderOrder = 5;
+          if (this.modelParts.topFlapBackMesh) this.modelParts.topFlapBackMesh.renderOrder = 5;
+          if (this.modelParts.topFlapEdgeMesh) this.modelParts.topFlapEdgeMesh.renderOrder = 5;
           this.modelParts.backPocketMesh.renderOrder = 4;
           this.modelParts.cardMesh.renderOrder = 3;
         },
