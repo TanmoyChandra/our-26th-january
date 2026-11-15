@@ -191,13 +191,16 @@ export class EnvelopeScene {
       ease: 'power2.out',
     });
 
+    const zBack = ENVELOPE_CONFIG.dimensions.depth / 2;
+    const closedFlapZ = zBack + 0.003;
+
     if (this.isOpen) {
       // 1. OPENING SEQUENCE:
       // STRICT ORDER: First the envelope opens completely. THEN the paper comes out.
       const targetFlapAngle = -Math.PI * 1.06;
-      const targetFlapZ = -0.012;
+      const targetFlapZ = -0.020;
       const targetCardY = 1.75;
-      const targetCardZ = 0.015;
+      const targetCardZ = 0.022;
 
       const tl = gsap.timeline();
 
@@ -238,7 +241,7 @@ export class EnvelopeScene {
       // Step 1: Paper slides all the way back down into the envelope first
       tl.to(this.modelParts.cardGroup.position, {
         y: 0,
-        z: 0.007,
+        z: 0.005,
         duration: 0.75,
         ease: 'power2.inOut',
       }, 0);
@@ -251,7 +254,7 @@ export class EnvelopeScene {
       }, '+=0.08');
 
       tl.to(this.modelParts.topFlapHinge.position, {
-        z: 0.023,
+        z: closedFlapZ,
         duration: 0.85,
         ease: 'power2.inOut',
         onComplete: () => {

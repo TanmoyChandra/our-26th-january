@@ -57,7 +57,7 @@ export const ENVELOPE_CONFIG: EnvelopeConfig = {
   dimensions: {
     width: 4.8,
     height: 3.014, // Exactly 1024:643 aspect ratio
-    depth: 0.04,
+    depth: 0.07,   // Physical thickness for luxury envelope
     flapOverlap: 0.12,
   },
   camera: {
