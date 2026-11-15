@@ -22,8 +22,8 @@ export function createEnvelopeMaterials(
   const { materials } = ENVELOPE_CONFIG;
   const baseColor = new THREE.Color(materials.paperColor);
 
-  // Envelope thickness rim color: requested #522805
-  const edgeThicknessColor = new THREE.Color(materials.shadowEdgeColor || '#522805');
+  // Envelope thickness rim color: requested #8f6f49
+  const edgeThicknessColor = new THREE.Color(materials.shadowEdgeColor || '#8f6f49');
 
   // Exterior paper for edges / envelope thickness
   const paperExterior = new THREE.MeshStandardMaterial({
