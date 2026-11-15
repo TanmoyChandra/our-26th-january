@@ -83,7 +83,7 @@ export const ENVELOPE_CONFIG: EnvelopeConfig = {
     roughness: 0.82,
     metalness: 0.04,
     innerColor: '#e1d2b0', // Warm cream interior lining
-    shadowEdgeColor: '#D2B789',
+    shadowEdgeColor: '#d3bb90',
     frontTexturePath: '/textures/envelope/envelope_front.png',
     backTexturePath: '/textures/envelope/envelope_back.png',
     flapTexturePath: '/textures/envelope/flap.png',
