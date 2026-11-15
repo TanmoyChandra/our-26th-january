@@ -362,14 +362,15 @@ export class EnvelopeScene {
       }, '<');
     } else {
       // 2. CLOSING SEQUENCE:
-      // STRICT ORDER: First paper card slides completely inside, THEN flap closes over it,
-      // THEN envelope rotates back to the front face (Math.PI) showing the guest's name.
+      // STRICT ORDER: First paper card slides completely inside, THEN flap closes over it and seals.
+      // (No rotation: remains facing the back side).
       if (this.controls) this.controls.enabled = false;
 
       const tl = gsap.timeline({
         onComplete: () => {
           if (this.controls) this.controls.enabled = true;
           this.openTimeline = null;
+          this.startTime = performance.now();
         },
       });
       this.openTimeline = tl;
@@ -408,48 +409,6 @@ export class EnvelopeScene {
           this.modelParts.cardMesh.renderOrder = 3;
         },
       }, '<');
-
-      // Step 3: Rotate smoothly back to the front face (Math.PI) with the personalized name
-      const sphericalClose = new THREE.Spherical().setFromVector3(this.camera.position);
-      const deltaThetaClose = Math.atan2(Math.sin(0 - sphericalClose.theta), Math.cos(0 - sphericalClose.theta));
-      const endThetaClose = sphericalClose.theta + deltaThetaClose;
-
-      const deltaRootYClose = Math.atan2(Math.sin(Math.PI - this.modelParts.root.rotation.y), Math.cos(Math.PI - this.modelParts.root.rotation.y));
-      const endRootYClose = this.modelParts.root.rotation.y + deltaRootYClose;
-
-      const animCloseState = {
-        radius: sphericalClose.radius,
-        phi: sphericalClose.phi,
-        theta: sphericalClose.theta,
-        rotY: this.modelParts.root.rotation.y,
-      };
-
-      tl.to(animCloseState, {
-        radius: targetZ,
-        phi: Math.PI / 2,
-        theta: endThetaClose,
-        rotY: endRootYClose,
-        duration: 0.85,
-        ease: 'power2.inOut',
-        onUpdate: () => {
-          const tempSpherical = new THREE.Spherical(animCloseState.radius, animCloseState.phi, animCloseState.theta);
-          tempSpherical.makeSafe();
-          this.camera.position.setFromSpherical(tempSpherical);
-          this.camera.lookAt(0, 0, 0);
-          this.modelParts.root.rotation.y = animCloseState.rotY;
-        },
-        onComplete: () => {
-          this.modelParts.root.rotation.set(0, Math.PI, 0);
-          this.camera.position.set(0, 0, targetZ);
-          this.camera.lookAt(0, 0, 0);
-          if (this.controls) {
-            this.controls.target.set(0, 0, 0);
-            this.controls.update();
-            this.controls.enabled = true;
-          }
-          this.startTime = performance.now();
-        },
-      }, '+=0.05');
     }
 
     return this.isOpen;
@@ -562,10 +521,12 @@ export class EnvelopeScene {
       this.entranceGiggleDone &&
       !this.isOpen &&
       !this.isUserInteracting &&
-      !this.giggleTimeline
+      !this.giggleTimeline &&
+      !this.openTimeline
     ) {
       const elapsed = (performance.now() - this.startTime) * 0.001;
-      const targetRotY = Math.PI + Math.sin(elapsed * 1.5) * 0.055; // subtle sway around Math.PI
+      const baseRotY = Math.abs(this.modelParts.root.rotation.y) > Math.PI / 2 ? Math.PI : 0;
+      const targetRotY = baseRotY + Math.sin(elapsed * 1.5) * 0.055;
       const targetRotX = Math.cos(elapsed * 1.1) * 0.03;  // +/- 1.7 degrees subtle nod
       const targetPosY = Math.sin(elapsed * 1.8) * 0.035; // gentle vertical float
 
