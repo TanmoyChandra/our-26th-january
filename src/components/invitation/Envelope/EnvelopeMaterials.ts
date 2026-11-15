@@ -71,11 +71,10 @@ export function createEnvelopeMaterials(
     depthWrite: true,
   });
 
-  // Warm interior paper lining visible inside when envelope opens
+  // Clean off-white interior paper lining visible inside when envelope opens
   const paperInterior = new THREE.MeshStandardMaterial({
-    map: cardBackTexture || null,
-    color: cardBackTexture ? 0xffffff : new THREE.Color('#9c7b52'),
-    roughness: 0.94,
+    color: new THREE.Color(materials.innerColor || '#faf6ee'),
+    roughness: 0.92,
     metalness: 0.02,
     side: THREE.DoubleSide,
     depthWrite: true,

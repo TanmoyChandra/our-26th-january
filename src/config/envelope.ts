@@ -82,7 +82,7 @@ export const ENVELOPE_CONFIG: EnvelopeConfig = {
     paperColor: '#ebd7b2',
     roughness: 0.82,
     metalness: 0.04,
-    innerColor: '#dfc59e',
+    innerColor: '#faf6ee', // Off-white interior lining
     shadowEdgeColor: '#8f6f49',
     frontTexturePath: '/textures/envelope/envelope_front.png',
     backTexturePath: '/textures/envelope/envelope_back.png',

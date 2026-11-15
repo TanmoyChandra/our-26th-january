@@ -133,10 +133,6 @@ export class EnvelopeScene {
           this.materials.cardBackPaper.map = tex;
           this.materials.cardBackPaper.needsUpdate = true;
         }
-        if (this.materials.paperInterior) {
-          this.materials.paperInterior.map = tex;
-          this.materials.paperInterior.needsUpdate = true;
-        }
       }
     );
 
