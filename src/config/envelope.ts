@@ -82,7 +82,7 @@ export const ENVELOPE_CONFIG: EnvelopeConfig = {
     roughness: 0.82,
     metalness: 0.04,
     innerColor: '#dfc59e',
-    shadowEdgeColor: '#ba9f79',
+    shadowEdgeColor: '#522805',
     frontTexturePath: '/textures/envelope/envelope_front.png',
     backTexturePath: '/textures/envelope/envelope_back.png',
     flapTexturePath: '/textures/envelope/flap.png',

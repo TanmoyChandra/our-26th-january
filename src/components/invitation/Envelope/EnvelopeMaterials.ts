@@ -22,12 +22,16 @@ export function createEnvelopeMaterials(
   const { materials } = ENVELOPE_CONFIG;
   const baseColor = new THREE.Color(materials.paperColor);
 
-  // Exterior paper for back & edges
+  // Envelope thickness rim color: requested #522805
+  const edgeThicknessColor = new THREE.Color(materials.shadowEdgeColor || '#522805');
+
+  // Exterior paper for edges / envelope thickness
   const paperExterior = new THREE.MeshStandardMaterial({
-    color: baseColor,
-    roughness: materials.roughness,
-    metalness: materials.metalness,
+    color: edgeThicknessColor,
+    roughness: 0.72,
+    metalness: 0.08,
     side: THREE.DoubleSide,
+    depthWrite: true,
   });
 
   // Plain side front face with custom artwork texture
