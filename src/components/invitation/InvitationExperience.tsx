@@ -46,20 +46,21 @@ export function InvitationExperience({
 
   const handleToggle = () => {
     if (isAnimating) return; // Prevent any interaction while animation is playing
+
+    // 1. Immediately start playing background music on user's open gesture
+    if (!isOpen) {
+      audioPlayerRef.current?.play();
+    }
+
+    // 2. Open the 3D envelope and animate flap + card emergence
     if (envelope3DRef.current) {
       if (isUnfolded) {
         envelope3DRef.current.toggleUnfold();
         setIsUnfolded(false);
         setScrollPage(1);
       }
-      const willOpen = !isOpen;
       const state = envelope3DRef.current.toggleOpen();
       setIsOpen(state);
-
-      // Start playing background music when opening the envelope
-      if (willOpen) {
-        audioPlayerRef.current?.play();
-      }
     }
   };
 
@@ -68,7 +69,9 @@ export function InvitationExperience({
     if (envelope3DRef.current) {
       const state = envelope3DRef.current.toggleUnfold();
       setIsUnfolded(state);
-      if (!state) {
+      if (state) {
+        audioPlayerRef.current?.play();
+      } else {
         setScrollPage(1);
       }
     }
@@ -76,7 +79,9 @@ export function InvitationExperience({
 
   const handleUnfoldChange = (unfolded: boolean) => {
     setIsUnfolded(unfolded);
-    if (!unfolded) {
+    if (unfolded) {
+      audioPlayerRef.current?.play();
+    } else {
       setScrollPage(1);
     }
   };
