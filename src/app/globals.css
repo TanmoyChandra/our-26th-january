@@ -58,4 +58,11 @@
   .text-muted-foreground { color: hsl(var(--muted-foreground)); }
   .bg-accent      { background-color: hsl(var(--accent)); }
   .text-accent-foreground { color: hsl(var(--accent-foreground)); }
+
+  /* Hide Next.js development indicator badge */
+  [data-nextjs-dev-indicator],
+  [data-nextjs-dev-tools-button],
+  nextjs-portal {
+    display: none !important;
+  }
 }

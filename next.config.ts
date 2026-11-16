@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   // Strict mode for catching React issues early
   reactStrictMode: true,
 
+  // Disable the development tools indicator (the Next.js "N" logo button at bottom-left)
+  devIndicators: false,
+
   // Image optimisation — Vercel provides this natively via its Image CDN.
   // Allow Vercel's optimised image domains if remote images are added later.
   images: {
