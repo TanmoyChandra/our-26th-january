@@ -103,24 +103,6 @@ export function BackgroundAudioPlayer({
 
           {/* Main outer golden metallic beveled bezel */}
           <div className="relative flex items-center justify-center rounded-full p-[2.5px] sm:p-[3px] bg-gradient-to-b from-[#fff0a8] via-[#ca8214] to-[#78350f] shadow-[0_8px_24px_rgba(0,0,0,0.85),0_0_20px_rgba(245,158,11,0.45)] ring-1 ring-[#5c2e0b]/80">
-            {/* Top Center Specular Lens Flare */}
-            <div
-              aria-hidden="true"
-              className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-20"
-            >
-              <div className="w-8 sm:w-10 h-[1.5px] bg-gradient-to-r from-transparent via-[#fffde6] to-transparent shadow-[0_0_6px_#ffffff,0_0_12px_#f59e0b]" />
-              <div className="absolute w-1 h-1 rounded-full bg-white shadow-[0_0_5px_#ffffff,0_0_10px_#f59e0b] blur-[0.2px]" />
-            </div>
-
-            {/* Bottom Center Specular Lens Flare */}
-            <div
-              aria-hidden="true"
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 flex items-center justify-center pointer-events-none z-20"
-            >
-              <div className="w-8 sm:w-10 h-[1.5px] bg-gradient-to-r from-transparent via-[#fff6c2] to-transparent shadow-[0_0_6px_#ffffff,0_0_12px_#f59e0b]" />
-              <div className="absolute w-1 h-1 rounded-full bg-white shadow-[0_0_5px_#ffffff,0_0_10px_#f59e0b] blur-[0.2px]" />
-            </div>
-
             {/* Inner velvet crimson fill container */}
             <div className="relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[radial-gradient(ellipse_at_center,_#6c1117_0%,_#4d080f_55%,_#2a0306_100%)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),inset_0_-2px_4px_rgba(0,0,0,0.8)] overflow-hidden">
               {/* Delicate inset golden hairline stroke */}
