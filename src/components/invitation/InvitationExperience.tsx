@@ -14,9 +14,9 @@ const Envelope3D = dynamic(
     ssr: false,
     loading: () => (
       <div className="w-full h-full flex flex-col items-center justify-center gap-3">
-        <div className="w-8 h-8 rounded-full border-2 border-amber-600/30 border-t-amber-700 animate-spin" />
-        <span className="text-[11px] font-mono tracking-widest uppercase text-neutral-400">
-          Loading 3D Envelope...
+        <div className="w-8 h-8 rounded-full border-2 border-amber-500/30 border-t-amber-400 animate-spin" />
+        <span className="text-xs tracking-widest text-amber-200/80 select-none">
+          Loading..
         </span>
       </div>
     ),
