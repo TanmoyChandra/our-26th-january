@@ -105,27 +105,25 @@ export function InvitationExperience({
           {!isUnfolded && (
             <button
               onClick={handleToggle}
-              className="group relative inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-900/60 via-amber-800/70 to-amber-900/60 text-amber-100 shadow-lg shadow-amber-950/50 backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 hover:border-amber-400/70"
-              aria-label={isOpen ? 'Close Envelope' : 'Open Envelope'}
+              className="group relative inline-flex flex-col items-center justify-center py-2 px-6 bg-transparent border-none cursor-pointer select-none transition-transform duration-300 hover:scale-105 active:scale-95 focus:outline-none"
+              aria-label={isOpen ? 'Close' : 'Open'}
             >
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-              <span className="font-serif tracking-widest uppercase text-xs font-medium">
-                {isOpen ? 'Close Envelope' : 'Open Envelope'}
+              {/* Top parallel line blending with background gradually */}
+              <span
+                aria-hidden="true"
+                className="w-36 sm:w-44 h-[1px] bg-gradient-to-r from-transparent via-amber-300/80 to-transparent transition-all duration-500 group-hover:via-amber-100 group-hover:w-44 sm:group-hover:w-52"
+              />
+
+              {/* Modern animated shining "OPEN" / "CLOSE" text */}
+              <span className="my-1.5 text-sm sm:text-base font-light tracking-[0.38em] uppercase animate-text-shine select-none drop-shadow-[0_0_12px_rgba(251,191,36,0.35)]">
+                {isOpen ? 'Close' : 'Open'}
               </span>
-              <svg
-                className={`w-3.5 h-3.5 text-amber-300/90 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''
-                  }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 15l7-7 7 7"
-                />
-              </svg>
+
+              {/* Bottom parallel line blending with background gradually */}
+              <span
+                aria-hidden="true"
+                className="w-36 sm:w-44 h-[1px] bg-gradient-to-r from-transparent via-amber-300/80 to-transparent transition-all duration-500 group-hover:via-amber-100 group-hover:w-44 sm:group-hover:w-52"
+              />
             </button>
           )}
 

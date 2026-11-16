@@ -65,4 +65,29 @@
   nextjs-portal {
     display: none !important;
   }
+
+  /* Animated metallic golden text shimmer */
+  .animate-text-shine {
+    background: linear-gradient(
+      115deg,
+      #eed9a4 15%,
+      #ffffff 45%,
+      #fff8db 55%,
+      #d4af37 80%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textShine 3s linear infinite;
+  }
+}
+
+@keyframes textShine {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
