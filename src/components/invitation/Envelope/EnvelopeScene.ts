@@ -13,6 +13,7 @@ export interface EnvelopeSceneOptions {
   interactiveRotation?: boolean;
   onAnimationChange?: (isAnimating: boolean) => void;
   onUnfoldChange?: (isUnfolded: boolean) => void;
+  onScrollChange?: (progress: number, page: number) => void;
 }
 
 export class EnvelopeScene {
@@ -41,6 +42,10 @@ export class EnvelopeScene {
   private entranceGiggleDone = false;
   private onAnimationChange?: (isAnimating: boolean) => void;
   private onUnfoldChange?: (isUnfolded: boolean) => void;
+  private onScrollChange?: (progress: number, page: number) => void;
+  private lastReportedPage = 1;
+  private lastReportedProgress = 0;
+  private scrollTween: gsap.core.Tween | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private startTime = performance.now();
 
@@ -72,6 +77,7 @@ export class EnvelopeScene {
     this.container = options.container;
     this.onAnimationChange = options.onAnimationChange;
     this.onUnfoldChange = options.onUnfoldChange;
+    this.onScrollChange = options.onScrollChange;
 
     // 1. Scene
     this.scene = new THREE.Scene();
@@ -308,6 +314,11 @@ export class EnvelopeScene {
     if (this.unfoldTimeline) {
       this.unfoldTimeline.kill();
       this.unfoldTimeline = null;
+    }
+
+    if (this.scrollTween) {
+      this.scrollTween.kill();
+      this.scrollTween = null;
     }
     if (!this.isOpen && this.isUnfolded) {
       this.isUnfolded = false;
@@ -609,6 +620,10 @@ export class EnvelopeScene {
 
   private onTouchStart = (e: TouchEvent): void => {
     if (!this.isUnfolded || this.unfoldTimeline || e.touches.length === 0) return;
+    if (this.scrollTween) {
+      this.scrollTween.kill();
+      this.scrollTween = null;
+    }
     this.touchStartX = e.touches[0].clientX;
     this.touchStartY = e.touches[0].clientY;
     this.touchStartScrollY = this.targetScrollY;
@@ -670,6 +685,10 @@ export class EnvelopeScene {
     this.tapStartTime = performance.now();
 
     if (!this.isUnfolded || this.unfoldTimeline || e.button !== 0) return;
+    if (this.scrollTween) {
+      this.scrollTween.kill();
+      this.scrollTween = null;
+    }
     this.pointerStartX = e.clientX;
     this.pointerStartY = e.clientY;
     this.pointerStartScrollY = this.targetScrollY;
@@ -724,9 +743,40 @@ export class EnvelopeScene {
 
   public getScrollPage(): number {
     const progress = this.getScrollProgress();
-    if (progress < 0.25) return 1;
+    if (progress < 0.30) return 1;
     if (progress < 0.75) return 2;
     return 3;
+  }
+
+  /**
+   * Smoothly scrolls to the next page of the 3-fold card.
+   * If on Page 1 -> scrolls to Page 2 (scrollY: 3.0)
+   * If on Page 2 -> scrolls to Page 3 (scrollY: 6.0, end page)
+   */
+  public scrollNext(): void {
+    if (!this.isUnfolded || this.isDisposed || this.unfoldTimeline) return;
+
+    if (this.scrollTween) {
+      this.scrollTween.kill();
+      this.scrollTween = null;
+    }
+
+    const progress = this.getScrollProgress();
+    let nextTarget = 6.0;
+    if (progress < 0.35) {
+      nextTarget = 3.0; // Advance to page 2
+    } else {
+      nextTarget = 6.0; // Advance to page 3 (end page)
+    }
+
+    this.scrollTween = gsap.to(this, {
+      targetScrollY: nextTarget,
+      duration: 0.85,
+      ease: 'power2.out',
+      onComplete: () => {
+        this.scrollTween = null;
+      },
+    });
   }
 
   /**
@@ -737,10 +787,19 @@ export class EnvelopeScene {
     if (this.isDisposed || !this.isOpen) return this.isUnfolded;
     this.isUnfolded = !this.isUnfolded;
 
+    if (this.scrollTween) {
+      this.scrollTween.kill();
+      this.scrollTween = null;
+    }
+
     if (this.unfoldTimeline) {
       this.unfoldTimeline.kill();
       this.unfoldTimeline = null;
     }
+
+    this.lastReportedPage = 1;
+    this.lastReportedProgress = 0;
+    this.onScrollChange?.(0, 1);
 
     const width = this.container.clientWidth || window.innerWidth;
     const height = this.container.clientHeight || window.innerHeight;
@@ -1132,13 +1191,22 @@ export class EnvelopeScene {
 
     // 3D vertical scrolling & subtle interactive 3D tilt when card is unfolded into 3 pages:
     if (this.isUnfolded && !this.unfoldTimeline) {
-      if (!this.isTouchScrolling && !this.isPointerScrolling) {
+      if (!this.isTouchScrolling && !this.isPointerScrolling && !this.scrollTween) {
         this.targetScrollY = Math.max(0, Math.min(6.0, this.targetScrollY));
         this.targetTiltY = 0;
         this.targetTiltZ = 0;
       }
       this.currentScrollY += (this.targetScrollY - this.currentScrollY) * 0.12;
       this.modelParts.cardGroup.position.y = this.currentScrollY;
+
+      // Notify scroll progress & page if changed
+      const progress = this.getScrollProgress();
+      const page = this.getScrollPage();
+      if (page !== this.lastReportedPage || Math.abs(progress - this.lastReportedProgress) > 0.015) {
+        this.lastReportedPage = page;
+        this.lastReportedProgress = progress;
+        this.onScrollChange?.(progress, page);
+      }
 
       // Smooth damping / spring-back for subtle 3D tilt on horizontal drag
       this.currentTiltY += (this.targetTiltY - this.currentTiltY) * 0.10;
@@ -1238,6 +1306,11 @@ export class EnvelopeScene {
     if (this.unfoldTimeline) {
       this.unfoldTimeline.kill();
       this.unfoldTimeline = null;
+    }
+
+    if (this.scrollTween) {
+      this.scrollTween.kill();
+      this.scrollTween = null;
     }
 
     if (this.animationFrameId !== null) {

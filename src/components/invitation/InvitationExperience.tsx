@@ -42,6 +42,7 @@ export function InvitationExperience({
   const [isOpen, setIsOpen] = useState(false);
   const [isUnfolded, setIsUnfolded] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [scrollPage, setScrollPage] = useState(1);
 
   const handleToggle = () => {
     if (isAnimating) return; // Prevent any interaction while animation is playing
@@ -49,6 +50,7 @@ export function InvitationExperience({
       if (isUnfolded) {
         envelope3DRef.current.toggleUnfold();
         setIsUnfolded(false);
+        setScrollPage(1);
       }
       const willOpen = !isOpen;
       const state = envelope3DRef.current.toggleOpen();
@@ -66,7 +68,26 @@ export function InvitationExperience({
     if (envelope3DRef.current) {
       const state = envelope3DRef.current.toggleUnfold();
       setIsUnfolded(state);
+      if (!state) {
+        setScrollPage(1);
+      }
     }
+  };
+
+  const handleUnfoldChange = (unfolded: boolean) => {
+    setIsUnfolded(unfolded);
+    if (!unfolded) {
+      setScrollPage(1);
+    }
+  };
+
+  const handleScrollChange = (_progress: number, page: number) => {
+    setScrollPage(page);
+  };
+
+  const handleScrollNext = () => {
+    if (isAnimating) return;
+    envelope3DRef.current?.scrollNext();
   };
 
   return (
@@ -112,7 +133,8 @@ export function InvitationExperience({
             guestName={guestInfo.displayName}
             category={guestInfo.category}
             onAnimationChange={setIsAnimating}
-            onUnfoldChange={setIsUnfolded}
+            onUnfoldChange={handleUnfoldChange}
+            onScrollChange={handleScrollChange}
           />
         </div>
       </section>
@@ -144,13 +166,47 @@ export function InvitationExperience({
             />
           )}
 
-          {/* READ / FOLD BUTTON */}
-          {isOpen && (
+          {/* READ BUTTON (Shown when envelope is open and card is nestled in pocket) */}
+          {isOpen && !isUnfolded && (
             <LuxuryActionButton
               onClick={handleToggleUnfold}
-              label={isUnfolded ? 'FOLD' : 'READ'}
-              className={isUnfolded ? 'min-w-[160px] sm:min-w-[200px]' : ''}
+              label="READ"
             />
+          )}
+
+          {/* UNFOLDED CONTROLS: Smooth crossfade between SCROLL and FOLD buttons */}
+          {isOpen && isUnfolded && (
+            <div className="relative inline-flex items-center justify-center">
+              {/* SCROLL BUTTON (Shown on Pages 1 & 2) */}
+              <div
+                className={`transition-all duration-400 ease-in-out ${
+                  scrollPage < 3
+                    ? 'opacity-100 pointer-events-auto scale-100'
+                    : 'opacity-0 pointer-events-none scale-95 absolute inset-0'
+                }`}
+              >
+                <LuxuryActionButton
+                  onClick={handleScrollNext}
+                  label="SCROLL"
+                  className="min-w-[160px] sm:min-w-[200px]"
+                />
+              </div>
+
+              {/* FOLD BUTTON (Fades in when reaching Page 3, End Page) */}
+              <div
+                className={`transition-all duration-400 ease-in-out ${
+                  scrollPage >= 3
+                    ? 'opacity-100 pointer-events-auto scale-100'
+                    : 'opacity-0 pointer-events-none scale-95 absolute inset-0'
+                }`}
+              >
+                <LuxuryActionButton
+                  onClick={handleToggleUnfold}
+                  label="FOLD"
+                  className="min-w-[160px] sm:min-w-[200px]"
+                />
+              </div>
+            </div>
           )}
         </div>
 
