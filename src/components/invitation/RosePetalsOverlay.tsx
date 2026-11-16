@@ -19,12 +19,13 @@ interface Petal {
   variant: number;
 }
 
-const PETAL_COUNT = 45;
+const PETAL_COUNT = 18;
 
 /**
  * RosePetalsOverlay
  * Renders a slow, dreamy cascade of delicate pink rose petals gently drifting
- * down from the top across the entire invitation screen.
+ * down from the top. Petals are small, semi-transparent, and biased toward the
+ * left and right flanks so the central invitation content remains unobscured.
  */
 export function RosePetalsOverlay() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -87,23 +88,44 @@ export function RosePetalsOverlay() {
       },
     ];
 
-    // Helper to generate a single petal
-    const createPetal = (initialY?: number): Petal => ({
-      x: Math.random() * width,
-      y: initialY !== undefined ? initialY : -40 - Math.random() * 80,
-      size: 16 + Math.random() * 16, // 16px to 32px: clearly visible and identifiable
-      speedY: 0.45 + Math.random() * 0.55, // Very slow, peaceful fall speed
-      speedX: (Math.random() - 0.5) * 0.4,
-      swaySpeed: 0.01 + Math.random() * 0.015,
-      swayAmplitude: 0.8 + Math.random() * 1.5,
-      swayPhase: Math.random() * Math.PI * 2,
-      rotation: Math.random() * Math.PI * 2,
-      rotationSpeed: (Math.random() - 0.5) * 0.02,
-      flip: Math.random() * Math.PI * 2,
-      flipSpeed: 0.015 + Math.random() * 0.025,
-      opacity: 0.75 + Math.random() * 0.22,
-      variant: Math.floor(Math.random() * petalColors.length),
-    });
+    // Helper to generate a single petal with biased horizontal distribution:
+    // Flanks (left and right) get majority of petals; center gets very few subtle petals
+    const createPetal = (initialY?: number): Petal => {
+      const rand = Math.random();
+      let x: number;
+      let isCenter = false;
+
+      if (rand < 0.42) {
+        // Left flank (0 - 24% width)
+        x = Math.random() * (width * 0.24);
+      } else if (rand < 0.84) {
+        // Right flank (76% - 100% width)
+        x = width * 0.76 + Math.random() * (width * 0.24);
+      } else {
+        // Center area (very sparse: 24% - 76% width)
+        x = width * 0.24 + Math.random() * (width * 0.52);
+        isCenter = true;
+      }
+
+      return {
+        x,
+        y: initialY !== undefined ? initialY : -25 - Math.random() * 50,
+        // Small, delicate petal size (8px to 13px; center even smaller 7px to 10px)
+        size: isCenter ? 7 + Math.random() * 3.5 : 8 + Math.random() * 5,
+        speedY: 0.32 + Math.random() * 0.35, // Calm, peaceful fall speed
+        speedX: (Math.random() - 0.5) * 0.3,
+        swaySpeed: 0.009 + Math.random() * 0.012,
+        swayAmplitude: 0.6 + Math.random() * 1.0,
+        swayPhase: Math.random() * Math.PI * 2,
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: (Math.random() - 0.5) * 0.015,
+        flip: Math.random() * Math.PI * 2,
+        flipSpeed: 0.012 + Math.random() * 0.02,
+        // Gentle translucent opacity (0.22 - 0.52) so it never distracts from card text
+        opacity: (isCenter ? 0.24 : 0.38) + Math.random() * 0.14,
+        variant: Math.floor(Math.random() * petalColors.length),
+      };
+    };
 
     // Distribute petals across the viewport initially so petals are visible immediately
     const petals: Petal[] = Array.from({ length: PETAL_COUNT }, () =>
@@ -144,11 +166,11 @@ export function RosePetalsOverlay() {
         ctx.scale(scaleX, 1);
         ctx.globalAlpha = p.opacity;
 
-        // Subtle drop shadow for depth against 3D envelope and background
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.22)';
-        ctx.shadowBlur = 5;
-        ctx.shadowOffsetX = 1;
-        ctx.shadowOffsetY = 2;
+        // Very soft, subtle drop shadow for depth without high contrast
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+        ctx.shadowBlur = 2;
+        ctx.shadowOffsetX = 0.5;
+        ctx.shadowOffsetY = 1;
 
         // Organic curved rose petal silhouette
         ctx.beginPath();
