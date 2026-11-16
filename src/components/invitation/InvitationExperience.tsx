@@ -2,6 +2,8 @@
 
 import React, { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'framer-motion';
+import { VENUE_MAPS_CONFIG } from '@/config/invitation';
 import type { EventDetails, GuestInfo, InvitationConfig } from '@/types/invitation';
 import type { Envelope3DRef } from './Envelope3D';
 
@@ -158,6 +160,57 @@ export function InvitationExperience({
           )}
         </div>
       </footer>
+
+      {/* 5. Google Maps Venue Location Shortcut (Bottom Right when unfolded) */}
+      <AnimatePresence>
+        {isUnfolded && (
+          <motion.aside
+            initial={{ opacity: 0, scale: 0.8, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 16 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="fixed bottom-6 right-6 z-40"
+            aria-label="Venue Google Maps link"
+          >
+            <a
+              href={VENUE_MAPS_CONFIG.googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-full border border-amber-400/50 bg-stone-950/85 hover:bg-stone-900 text-amber-200 hover:text-amber-100 shadow-2xl shadow-black/80 backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 hover:border-amber-300 hover:shadow-amber-500/20"
+              title={`Open venue in Google Maps: ${VENUE_MAPS_CONFIG.venueName}`}
+            >
+              {/* Google Maps Pin Emblem */}
+              <div className="relative flex items-center justify-center w-7 h-7 rounded-full bg-white shadow-md p-1 group-hover:scale-110 transition-transform">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  {/* Google Maps Pin Shape */}
+                  <path
+                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+                    fill="#EA4335"
+                  />
+                  <circle cx="12" cy="9" r="2.8" fill="#FFFFFF" />
+                  <path
+                    d="M12 2C8.13 2 5 5.13 5 9c0 1.74.5 3.37 1.41 4.84L12 22l5.59-8.16C18.5 12.37 19 10.74 19 9c0-3.87-3.13-7-7-7z"
+                    fill="url(#gmaps-grad)"
+                    fillOpacity="0.2"
+                  />
+                  <defs>
+                    <linearGradient id="gmaps-grad" x1="5" y1="2" x2="19" y2="22">
+                      <stop stopColor="#4285F4" />
+                      <stop offset="0.5" stopColor="#FBBC04" />
+                      <stop offset="1" stopColor="#34A853" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+
+              {/* Label: shows icon + text */}
+              <span className="font-serif text-xs tracking-wider uppercase font-medium pr-1">
+                Venue Location
+              </span>
+            </a>
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

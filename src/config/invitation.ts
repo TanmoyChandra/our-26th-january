@@ -36,3 +36,11 @@ export const INVITATION_CONFIG: InvitationConfig = {
   },
   rsvpDeadline: '[Date TBD]',
 };
+
+export const VENUE_MAPS_CONFIG = {
+  venueName: 'ITC Royal Bengal',
+  address: 'ITC Royal Bengal, 1, JBS Haldane Ave, Tangra, Kolkata, West Bengal 700046',
+  get googleMapsUrl(): string {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(this.address)}`;
+  },
+};
