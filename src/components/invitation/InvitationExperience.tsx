@@ -68,6 +68,15 @@ export function InvitationExperience({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/50 pointer-events-none" />
       </div>
 
+      {/* 2. Top-Left Floral Corner Ornament */}
+      <div className="fixed top-0 left-0 z-20 pointer-events-none select-none">
+        <img
+          src="/images/floral_top_left.png"
+          alt=""
+          className="w-36 sm:w-48 md:w-60 lg:w-72 max-w-[45vw] h-auto object-contain object-left-top drop-shadow-lg"
+        />
+      </div>
+
 
       {/* 3. Interactive 3D Envelope Viewport: Full Screen Viewport */}
       <section
