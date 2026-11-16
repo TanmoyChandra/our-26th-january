@@ -37,9 +37,17 @@ export class GuestNameTexture {
     this.texture.magFilter = THREE.LinearFilter;
 
     if (typeof document !== 'undefined' && document.fonts) {
-      document.fonts.ready.then(() => {
-        this.update(options);
-      });
+      Promise.all([
+        document.fonts.load('600 120px "Dancing Script"'),
+        document.fonts.load('600 120px "Caveat"'),
+        document.fonts.ready,
+      ])
+        .then(() => {
+          this.update(options);
+        })
+        .catch(() => {
+          this.update(options);
+        });
     }
 
     this.update(options);
@@ -74,29 +82,29 @@ export class GuestNameTexture {
     const targetCenterX = width * 0.50;
     const targetCenterY = height * 0.50;
 
-    let fontSize = 104;
+    let fontSize = 118;
     if (lines.length === 1) {
-      fontSize = 120;
+      fontSize = 134;
     } else if (lines.length > 2) {
-      fontSize = 86;
+      fontSize = 98;
     }
 
     for (const line of lines) {
       if (line.length > 18) {
-        fontSize = Math.min(fontSize, 82);
+        fontSize = Math.min(fontSize, 92);
       } else if (line.length > 14) {
-        fontSize = Math.min(fontSize, 94);
+        fontSize = Math.min(fontSize, 106);
       }
     }
 
-    const cursiveFont = '"Great Vibes", "Alex Brush", "Snell Roundhand", "Apple Chancery", cursive';
-    this.ctx.font = `normal ${fontSize}px ${cursiveFont}`;
+    // Natural, organic handwriting font: Dancing Script with Caveat & handwriting fallbacks
+    const handwritingFont = '"Dancing Script", "Caveat", "Marck Script", "Segoe Script", cursive';
+    this.ctx.font = `600 ${fontSize}px ${handwritingFont}`;
 
-    const lineHeight = fontSize * 1.16;
+    const lineHeight = fontSize * 1.22;
     const totalNamesHeight = (lines.length - 1) * lineHeight;
 
     // Measure maximum name width to accurately determine the left edge of the block
-    // Measure maximum name width to find the left boundary
     let maxNameWidth = 0;
     lines.forEach((line) => {
       const metrics = this.ctx.measureText(line);
@@ -108,19 +116,19 @@ export class GuestNameTexture {
     const blockLeftX = targetCenterX - maxNameWidth / 2;
     const namesStartY = targetCenterY - totalNamesHeight / 2 + 20;
 
-    // 1. "To.." in clean, normal serif font (non-cursive, left-aligned)
+    // 1. "To.." in clean, normal serif font (font style for "to" unchanged as requested)
     this.ctx.textAlign = 'left';
     this.ctx.textBaseline = 'bottom';
-    const toFontSize = Math.round(fontSize * 0.48);
+    const toFontSize = Math.round(fontSize * 0.44);
     this.ctx.font = `normal 500 ${toFontSize}px "Cinzel", "Playfair Display", "Georgia", "Times New Roman", serif`;
     // Generous breathing space (gap) between "To.." and the first name
     const toY = namesStartY - fontSize * 0.85;
     this.ctx.fillText('To..', blockLeftX, toY);
 
-    // 2. Guest Names rendered below in cursive script
+    // 2. Guest Names rendered below in handwriting script
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
-    this.ctx.font = `normal ${fontSize}px ${cursiveFont}`;
+    this.ctx.font = `600 ${fontSize}px ${handwritingFont}`;
 
     lines.forEach((line, index) => {
       const y = namesStartY + index * lineHeight;

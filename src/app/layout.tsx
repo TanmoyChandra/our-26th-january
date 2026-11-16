@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Great_Vibes } from 'next/font/google';
+import { Inter, Great_Vibes, Dancing_Script } from 'next/font/google';
 import { MotionProvider } from '@/components/providers/MotionProvider';
 import './globals.css';
 import '@/styles/animations.css';
@@ -15,6 +15,13 @@ const greatVibes = Great_Vibes({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-cursive',
+});
+
+const dancingScript = Dancing_Script({
+  weight: ['600', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-handwriting',
 });
 
 export const metadata: Metadata = {
@@ -39,7 +46,7 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en" className={`${inter.variable} ${greatVibes.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${greatVibes.variable} ${dancingScript.variable}`} suppressHydrationWarning>
       <body className="min-h-[100dvh] h-[100dvh] w-full overflow-hidden bg-background font-sans antialiased" suppressHydrationWarning>
         <MotionProvider>
           {children}
