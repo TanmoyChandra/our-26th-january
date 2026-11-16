@@ -20,47 +20,19 @@ export function BackgroundAudioPlayer({
 }: BackgroundAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-
     audio.volume = volume;
+  }, [volume]);
 
-    const handleFirstInteraction = () => {
-      if (hasInteracted) return;
-
-      audio
-        .play()
-        .then(() => {
-          setIsPlaying(true);
-          setHasInteracted(true);
-          cleanupListeners();
-        })
-        .catch((err) => {
-          // Some browsers require repeated touch or user gesture on certain elements
-          console.warn('Autoplay waiting for direct user gesture:', err);
-        });
-    };
-
-    const cleanupListeners = () => {
-      window.removeEventListener('pointerdown', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('keydown', handleFirstInteraction);
-    };
-
-    window.addEventListener('pointerdown', handleFirstInteraction, { passive: true });
-    window.addEventListener('touchstart', handleFirstInteraction, { passive: true });
-    window.addEventListener('click', handleFirstInteraction, { passive: true });
-    window.addEventListener('keydown', handleFirstInteraction, { passive: true });
-
+  // Clean up audio on unmount
+  useEffect(() => {
     return () => {
-      cleanupListeners();
-      audio.pause();
+      audioRef.current?.pause();
     };
-  }, [src, volume, hasInteracted]);
+  }, []);
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -75,7 +47,6 @@ export function BackgroundAudioPlayer({
         .play()
         .then(() => {
           setIsPlaying(true);
-          setHasInteracted(true);
         })
         .catch((err) => console.warn('Could not resume audio:', err));
     }
@@ -198,20 +169,42 @@ export function BackgroundAudioPlayer({
                     />
                   </div>
                 ) : (
-                  /* Muted musical note with golden slash */
+                  /* Muted musical note with clean negative-space clearance slash */
                   <svg
                     className="w-4 h-4 sm:w-5 sm:h-5 text-amber-200/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_0_8px_rgba(245,158,11,0.5)] transition-transform duration-300 group-hover:scale-105"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    viewBox="0 0 24 24"
+                    viewBox="0 0 512 512"
+                    fill="currentColor"
                   >
+                    <defs>
+                      <mask id="musicSlashMask">
+                        <rect x="0" y="0" width="512" height="512" fill="white" />
+                        {/* Cutout band providing clean negative space clearance around slash */}
+                        <line
+                          x1="55"
+                          y1="55"
+                          x2="457"
+                          y2="457"
+                          stroke="black"
+                          strokeWidth="70"
+                          strokeLinecap="round"
+                        />
+                      </mask>
+                    </defs>
+                    {/* Solid double musical note with mask applied */}
                     <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"
+                      mask="url(#musicSlashMask)"
+                      d="M499.1 6.3c8.1 6 12.9 15.6 12.9 25.7l0 72 0 264c0 44.2-43 80-96 80s-96-35.8-96-80s43-80 96-80c11.2 0 22 1.6 32 4.6L448 147 192 223.8 192 432c0 44.2-43 80-96 80s-96-35.8-96-80s43-80 96-80c11.2 0 22 1.6 32 4.6L128 200l0-72c0-14.1 9.3-26.6 22.8-30.7l320-96c9.7-2.9 20.2-1.1 28.3 5z"
                     />
-                    <line x1="3" y1="3" x2="21" y2="21" stroke="#fef08a" strokeWidth="2.4" strokeLinecap="round" />
+                    {/* Golden diagonal slash line sitting centered in the negative space gap */}
+                    <line
+                      x1="55"
+                      y1="55"
+                      x2="457"
+                      y2="457"
+                      stroke="currentColor"
+                      strokeWidth="42"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 )}
               </div>
