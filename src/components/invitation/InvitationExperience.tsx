@@ -58,9 +58,9 @@ export function InvitationExperience({
   };
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-[#0c0a09] select-none">
+    <main className="fixed inset-0 w-full h-[100dvh] overflow-hidden bg-[#0c0a09] select-none">
       {/* 1. Overall space luxury banquet backdrop (Optimized WebP & Progressive JPEG for instant loading) */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden select-none">
         <picture>
           <source srcSet="/images/space_background.webp" type="image/webp" />
           <img
@@ -91,7 +91,7 @@ export function InvitationExperience({
 
       {/* 3. Interactive 3D Envelope Viewport: Full Screen Viewport */}
       <section
-        className="absolute inset-0 z-10 w-full h-full flex items-center justify-center overflow-hidden"
+        className="fixed inset-0 z-10 w-full h-[100dvh] flex items-center justify-center overflow-hidden"
         aria-label="3D Envelope Experience"
       >
         <div className="w-full h-full flex items-center justify-center">
@@ -109,7 +109,7 @@ export function InvitationExperience({
 
       {/* 4. Bottom Floating Action Controls (Fades out smoothly during 3D animations and locks interaction) */}
       <footer
-        className={`absolute bottom-14 sm:bottom-16 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4 transition-all duration-400 ease-in-out ${
+        className={`fixed bottom-6 sm:bottom-8 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] transition-all duration-400 ease-in-out ${
           isAnimating
             ? 'opacity-0 pointer-events-none translate-y-3'
             : 'opacity-100 pointer-events-auto translate-y-0'
@@ -192,7 +192,7 @@ export function InvitationExperience({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.7, y: 16 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="fixed bottom-6 right-5 sm:right-7 z-40"
+            className="fixed bottom-6 right-5 sm:right-7 z-40 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]"
             aria-label="Venue Google Maps link"
           >
             <a

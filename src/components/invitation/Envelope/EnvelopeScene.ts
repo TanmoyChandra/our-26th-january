@@ -39,6 +39,7 @@ export class EnvelopeScene {
   private isUnfolded = false;
   private entranceGiggleDone = false;
   private onAnimationChange?: (isAnimating: boolean) => void;
+  private resizeObserver: ResizeObserver | null = null;
   private startTime = performance.now();
 
   // 3D vertical scrolling and interactive horizontal tilt state when card is unfolded into 3 pages
@@ -211,9 +212,17 @@ export class EnvelopeScene {
       });
     }
 
-    // 9. Event listeners
+    // 9. Event listeners (cross-device mobile & orientation robust)
     this.handleResize = this.handleResize.bind(this);
     window.addEventListener('resize', this.handleResize);
+    window.addEventListener('orientationchange', this.handleResize);
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      window.visualViewport.addEventListener('resize', this.handleResize);
+    }
+    if (typeof ResizeObserver !== 'undefined' && this.container) {
+      this.resizeObserver = new ResizeObserver(() => this.handleResize());
+      this.resizeObserver.observe(this.container);
+    }
 
     // 3D vertical scrolling event listeners when card is unfolded into 3 pages
     const dom = this.renderer.domElement;
@@ -955,9 +964,9 @@ export class EnvelopeScene {
     const zForWidth = envelopeWidth / (desiredWidthRatio * 2 * halfFovTan * aspect);
 
     // On landscape / desktop displays, ensure the open envelope + emerged card (~4.85 units total height)
-    // takes at most 72% of the viewport height so top header and bottom buttons are never covered.
+    // takes at most 68% of the viewport height so top header and bottom buttons are never covered.
     const totalOpenHeight = 4.85;
-    const desiredMaxHeightRatio = 0.72;
+    const desiredMaxHeightRatio = 0.68;
     const zForHeight = totalOpenHeight / (desiredMaxHeightRatio * 2 * halfFovTan);
 
     // On portrait mobile (aspect < 1), zForWidth dominates, giving exactly 90% screen width.
@@ -1134,6 +1143,14 @@ export class EnvelopeScene {
   public dispose(): void {
     this.isDisposed = true;
     window.removeEventListener('resize', this.handleResize);
+    window.removeEventListener('orientationchange', this.handleResize);
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      window.visualViewport.removeEventListener('resize', this.handleResize);
+    }
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
 
     const dom = this.renderer.domElement;
     dom.removeEventListener('wheel', this.onWheel);

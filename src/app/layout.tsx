@@ -29,7 +29,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#ffffff',
+  viewportFit: 'cover',
+  themeColor: '#0c0a09',
 };
 
 interface RootLayoutProps {
@@ -39,7 +40,7 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className={`${inter.variable} ${greatVibes.variable}`} suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-sans antialiased" suppressHydrationWarning>
+      <body className="min-h-[100dvh] h-[100dvh] w-full overflow-hidden bg-background font-sans antialiased" suppressHydrationWarning>
         <MotionProvider>
           {children}
         </MotionProvider>
