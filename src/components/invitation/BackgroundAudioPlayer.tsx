@@ -103,6 +103,64 @@ export function BackgroundAudioPlayer({
 
           {/* Main outer golden metallic beveled bezel */}
           <div className="relative flex items-center justify-center rounded-full p-[2.5px] sm:p-[3px] bg-gradient-to-b from-[#fff0a8] via-[#ca8214] to-[#78350f] shadow-[0_8px_24px_rgba(0,0,0,0.85),0_0_20px_rgba(245,158,11,0.45)] ring-1 ring-[#5c2e0b]/80">
+            {/* Left Ornate Ogee Tip (Royal Cartouche Spike) */}
+            <div
+              aria-hidden="true"
+              className="absolute -left-[5px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-20"
+            >
+              <svg
+                width="8"
+                height="14"
+                viewBox="0 0 8 14"
+                className="drop-shadow-[0_0_3px_rgba(245,158,11,0.8)]"
+              >
+                <path
+                  d="M 8 0 C 6 3 0 7 0 7 C 0 7 6 11 8 14 Z"
+                  fill="url(#musicSpikeGradLeft)"
+                  stroke="#5c2e0b"
+                  strokeWidth="0.6"
+                />
+                {/* Inner rivet / jewel accent */}
+                <circle cx="4.5" cy="7" r="1" fill="#3b0509" />
+                <defs>
+                  <linearGradient id="musicSpikeGradLeft" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fff0a8" />
+                    <stop offset="50%" stopColor="#ca8214" />
+                    <stop offset="100%" stopColor="#78350f" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+
+            {/* Right Ornate Ogee Tip (Royal Cartouche Spike) */}
+            <div
+              aria-hidden="true"
+              className="absolute -right-[5px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-20"
+            >
+              <svg
+                width="8"
+                height="14"
+                viewBox="0 0 8 14"
+                className="drop-shadow-[0_0_3px_rgba(245,158,11,0.8)]"
+              >
+                <path
+                  d="M 0 0 C 2 3 8 7 8 7 C 8 7 2 11 0 14 Z"
+                  fill="url(#musicSpikeGradRight)"
+                  stroke="#5c2e0b"
+                  strokeWidth="0.6"
+                />
+                {/* Inner rivet / jewel accent */}
+                <circle cx="3.5" cy="7" r="1" fill="#3b0509" />
+                <defs>
+                  <linearGradient id="musicSpikeGradRight" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fff0a8" />
+                    <stop offset="50%" stopColor="#ca8214" />
+                    <stop offset="100%" stopColor="#78350f" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+
             {/* Inner velvet crimson fill container */}
             <div className="relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[radial-gradient(ellipse_at_center,_#6c1117_0%,_#4d080f_55%,_#2a0306_100%)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),inset_0_-2px_4px_rgba(0,0,0,0.8)] overflow-hidden">
               {/* Delicate inset golden hairline stroke */}
