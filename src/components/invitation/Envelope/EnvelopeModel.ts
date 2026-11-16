@@ -4,6 +4,7 @@ import { EnvelopeMaterialsMap } from './EnvelopeMaterials';
 
 export interface EnvelopeModelParts {
   root: THREE.Group;
+  envelopeGroup: THREE.Group;
   frontPlain: THREE.Mesh;
   interiorBack: THREE.Mesh;
   cardGroup: THREE.Group;
@@ -274,6 +275,10 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   const root = new THREE.Group();
   root.name = 'EnvelopeRoot';
 
+  const envelopeGroup = new THREE.Group();
+  envelopeGroup.name = 'EnvelopePocketAndFlaps';
+  root.add(envelopeGroup);
+
   const { width, height, depth } = ENVELOPE_CONFIG.dimensions;
   const halfH = height / 2;
   const zFront = -depth / 2;
@@ -289,7 +294,7 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   frontPlain.renderOrder = 0;
   frontPlain.castShadow = true;
   frontPlain.receiveShadow = true;
-  root.add(frontPlain);
+  envelopeGroup.add(frontPlain);
 
   // 1b. Personalized Guest Name on the Front Face
   const nameGeo = createRoundedPlaneGeometry(width, height, cornerRadius);
@@ -298,7 +303,7 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   nameMesh.position.set(0, 0, zFront - 0.002);
   nameMesh.rotation.y = Math.PI;
   nameMesh.renderOrder = 1;
-  root.add(nameMesh);
+  envelopeGroup.add(nameMesh);
 
   // 1c. PHYSICAL THICKNESS RIM: connects front and back around all rounded edges
   const rimGeo = createEnvelopeRimGeometry(width, height, depth, cornerRadius);
@@ -307,7 +312,7 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   rimMesh.renderOrder = 2;
   rimMesh.castShadow = true;
   rimMesh.receiveShadow = true;
-  root.add(rimMesh);
+  envelopeGroup.add(rimMesh);
 
   // 2. INNER POCKET LINING (Visible inside when top flap opens)
   const interiorGeo = createRoundedPlaneGeometry(width - 0.04, height - 0.04, cornerRadius * 0.8);
@@ -315,13 +320,13 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   interiorBack.name = 'EnvelopeInteriorBack';
   interiorBack.position.set(0, 0, -0.02);
   interiorBack.renderOrder = 2;
-  root.add(interiorBack);
+  envelopeGroup.add(interiorBack);
 
   // 3. TOP FLAP WITH HINGE (at top fold line y = halfH)
   const topFlapHinge = new THREE.Group();
   topFlapHinge.name = 'TopFlapHinge';
   topFlapHinge.position.set(0, halfH, zBack + 0.003);
-  root.add(topFlapHinge);
+  envelopeGroup.add(topFlapHinge);
 
   const flapThickness = 0.008; // Physical luxury cardstock thickness
   const halfFlapT = flapThickness / 2;
@@ -489,13 +494,14 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   backPocketMesh.renderOrder = 4;
   backPocketMesh.castShadow = true;
   backPocketMesh.receiveShadow = true;
-  root.add(backPocketMesh);
+  envelopeGroup.add(backPocketMesh);
 
   // Initial presentation: Start with front side showing (personalized guest name & couple artwork)
   root.rotation.y = Math.PI;
 
   return {
     root,
+    envelopeGroup,
     frontPlain,
     interiorBack,
     cardGroup,

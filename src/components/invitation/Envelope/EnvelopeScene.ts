@@ -414,6 +414,8 @@ export class EnvelopeScene {
       // Step 1: If card was unfolded, fold panels back immediately
       if (this.isUnfolded) {
         this.isUnfolded = false;
+        this.targetScrollY = 0;
+        this.currentScrollY = 0;
         tl.to(this.modelParts.bottomPanelHinge.rotation, {
           x: -Math.PI,
           duration: 0.4,
@@ -424,8 +426,15 @@ export class EnvelopeScene {
           duration: 0.4,
           ease: 'power2.inOut',
         }, 0);
-        tl.to(this.modelParts.root.position, {
+        tl.to(this.modelParts.envelopeGroup.position, {
           y: 0,
+          duration: 0.4,
+          ease: 'power2.inOut',
+        }, 0);
+        tl.to(this.modelParts.root.position, {
+          x: 0,
+          y: 0,
+          z: 0,
           duration: 0.4,
           ease: 'power2.inOut',
         }, 0);
@@ -603,10 +612,12 @@ export class EnvelopeScene {
         },
       }, 0);
 
-      // Phase 2: Envelope root moves down to background
+      // Phase 2: Root stays cleanly at center (0, 0, 0), rotation aligned flat facing front
       tl.to(this.modelParts.root.position, {
-        y: -4.2,
-        duration: 1.10,
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: 0.85,
         ease: 'power2.inOut',
       }, 0);
 
@@ -615,6 +626,13 @@ export class EnvelopeScene {
         y: 0,
         z: 0,
         duration: 0.85,
+        ease: 'power2.inOut',
+      }, 0);
+
+      // Envelope pocket and flaps move down into background so only the reading card is focused
+      tl.to(this.modelParts.envelopeGroup.position, {
+        y: -5.0,
+        duration: 1.10,
         ease: 'power2.inOut',
       }, 0);
 
@@ -677,6 +695,13 @@ export class EnvelopeScene {
       });
       this.unfoldTimeline = tl;
 
+      // Step 0: Smoothly glide card from current scroll position back towards reading origin
+      tl.to(this.modelParts.cardGroup.position, {
+        y: 0.20,
+        duration: 0.35,
+        ease: 'power2.inOut',
+      }, 0);
+
       // Step 1: Bottom panel flips up first with natural paper snap
       tl.to(this.modelParts.bottomPanelHinge.rotation, {
         keyframes: [
@@ -712,8 +737,16 @@ export class EnvelopeScene {
       }, 0.35);
 
       // Step 4: Envelope moves back to center & camera returns
-      tl.to(this.modelParts.root.position, {
+      tl.to(this.modelParts.envelopeGroup.position, {
         y: 0,
+        duration: 0.85,
+        ease: 'power2.inOut',
+      }, 0.35);
+
+      tl.to(this.modelParts.root.position, {
+        x: 0,
+        y: 0,
+        z: 0,
         duration: 0.85,
         ease: 'power2.inOut',
       }, 0.35);
