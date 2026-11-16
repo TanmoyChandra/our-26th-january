@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { m, AnimatePresence } from 'framer-motion';
 import { VENUE_MAPS_CONFIG } from '@/config/invitation';
 import { RosePetalsOverlay } from './RosePetalsOverlay';
+import { LuxuryActionButton } from './LuxuryActionButton';
 import type { EventDetails, GuestInfo, InvitationConfig } from '@/types/invitation';
 import type { Envelope3DRef } from './Envelope3D';
 
@@ -115,69 +116,25 @@ export function InvitationExperience({
             : 'opacity-100 pointer-events-auto translate-y-0'
         }`}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 sm:gap-4">
           {/* OPEN / CLOSE BUTTON (Shown when card is nestled in envelope) */}
           {!isUnfolded && (
-            <button
+            <LuxuryActionButton
               onClick={handleToggle}
-              className="group relative inline-flex flex-col items-center justify-center bg-transparent border-none cursor-pointer select-none transition-transform duration-300 hover:scale-105 active:scale-95 focus:outline-none"
-              aria-label={isOpen ? 'Close' : 'Open'}
-            >
-              <div className="relative flex flex-col items-center justify-center w-36 sm:w-48">
-                {/* Top parallel line blending with background gradually */}
-                <span
-                  aria-hidden="true"
-                  className="relative z-10 w-full h-[1.5px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.5)] transition-all duration-500 group-hover:via-amber-300"
-                />
-
-                {/* Modern animated shining golden "OPEN" / "CLOSE" text */}
-                <span className="relative z-10 my-2 text-base sm:text-lg font-normal tracking-[0.42em] uppercase animate-text-shine select-none drop-shadow-[0_0_14px_rgba(234,179,8,0.6)] drop-shadow-[0_0_2px_rgba(254,240,138,0.8)]">
-                  {isOpen ? 'Close' : 'Open'}
-                </span>
-
-                {/* Bottom parallel line blending with background gradually */}
-                <span
-                  aria-hidden="true"
-                  className="relative z-10 w-full h-[1.5px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.5)] transition-all duration-500 group-hover:via-amber-300"
-                />
-              </div>
-            </button>
+              label={isOpen ? 'CLOSE' : 'OPEN'}
+              chevronDirection={isOpen ? 'left' : 'right'}
+              className={!isOpen ? 'min-w-[155px] sm:min-w-[190px]' : ''}
+            />
           )}
 
-          {/* READ / FOLD BUTTON (Identical modern luxury aesthetic; black horizontal fade strictly bounded between golden lines for FOLD) */}
+          {/* READ / FOLD BUTTON */}
           {isOpen && (
-            <button
+            <LuxuryActionButton
               onClick={handleToggleUnfold}
-              className="group relative inline-flex flex-col items-center justify-center bg-transparent border-none cursor-pointer select-none transition-transform duration-300 hover:scale-105 active:scale-95 focus:outline-none"
-              aria-label={isUnfolded ? 'Fold' : 'Read'}
-            >
-              <div className="relative flex flex-col items-center justify-center w-36 sm:w-48">
-                {/* Horizontal black gradient strictly bounded between top & bottom lines, fading left & right */}
-                {isUnfolded && (
-                  <div
-                    aria-hidden="true"
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-black/95 to-transparent pointer-events-none"
-                  />
-                )}
-
-                {/* Top parallel line blending with background gradually */}
-                <span
-                  aria-hidden="true"
-                  className="relative z-10 w-full h-[1.5px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.5)] transition-all duration-500 group-hover:via-amber-300"
-                />
-
-                {/* Modern animated shining golden "READ" / "FOLD" text */}
-                <span className="relative z-10 my-2 text-base sm:text-lg font-normal tracking-[0.42em] uppercase animate-text-shine select-none drop-shadow-[0_0_14px_rgba(234,179,8,0.6)] drop-shadow-[0_0_2px_rgba(254,240,138,0.8)]">
-                  {isUnfolded ? 'Fold' : 'Read'}
-                </span>
-
-                {/* Bottom parallel line blending with background gradually */}
-                <span
-                  aria-hidden="true"
-                  className="relative z-10 w-full h-[1.5px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.5)] transition-all duration-500 group-hover:via-amber-300"
-                />
-              </div>
-            </button>
+              label={isUnfolded ? 'FOLD' : 'READ'}
+              chevronDirection={isUnfolded ? 'left' : 'right'}
+              className={isUnfolded ? 'min-w-[155px] sm:min-w-[190px]' : ''}
+            />
           )}
         </div>
 
