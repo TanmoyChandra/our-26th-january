@@ -56,13 +56,18 @@ export function InvitationExperience({
 
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-[#0c0a09] select-none">
-      {/* 1. Overall space luxury banquet backdrop */}
+      {/* 1. Overall space luxury banquet backdrop (Optimized WebP & Progressive JPEG for instant loading) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
-        <img
-          src="/images/space_background.jpg"
-          alt="Wedding venue ambience"
-          className="w-full h-full object-cover object-center brightness-105 contrast-[1.02]"
-        />
+        <picture>
+          <source srcSet="/images/space_background.webp" type="image/webp" />
+          <img
+            src="/images/space_background.jpg"
+            alt="Wedding venue ambience"
+            className="w-full h-full object-cover object-center brightness-105 contrast-[1.02]"
+            loading="eager"
+            decoding="async"
+          />
+        </picture>
         {/* Soft, light vignette solely at the bottom edge for button contrast, keeping the background bright & luminous */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
       </div>
