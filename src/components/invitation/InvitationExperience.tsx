@@ -6,6 +6,7 @@ import { m, AnimatePresence } from 'framer-motion';
 import { VENUE_MAPS_CONFIG } from '@/config/invitation';
 import { RosePetalsOverlay } from './RosePetalsOverlay';
 import { LuxuryActionButton } from './LuxuryActionButton';
+import { BackgroundAudioPlayer } from './BackgroundAudioPlayer';
 import type { EventDetails, GuestInfo, InvitationConfig } from '@/types/invitation';
 import type { Envelope3DRef } from './Envelope3D';
 
@@ -108,6 +109,9 @@ export function InvitationExperience({
 
       {/* 3b. Romantic Falling Pink Rose Petals Overlay */}
       <RosePetalsOverlay />
+
+      {/* 3c. Atmospheric Background Music Player (Starts on any user touch/interaction) */}
+      <BackgroundAudioPlayer src="/audio/satranga-short.mp3" />
 
       {/* 4. Bottom Floating Action Controls (Fades out smoothly during 3D animations and locks interaction) */}
       <footer
