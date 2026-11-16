@@ -37,9 +37,16 @@ export class EnvelopeScene {
   private isUnfolded = false;
   private entranceGiggleDone = false;
   private startTime = performance.now();
-  private onZoomInComplete?: () => void;
-  private onZoomOutComplete?: () => void;
-  private isPaused = false;
+
+  // 3D vertical scrolling state when card is unfolded into 3 pages
+  private targetScrollY = 0;
+  private currentScrollY = 0;
+  private touchStartY = 0;
+  private touchStartScrollY = 0;
+  private isTouchScrolling = false;
+  private pointerStartY = 0;
+  private pointerStartScrollY = 0;
+  private isPointerScrolling = false;
 
   constructor(options: EnvelopeSceneOptions) {
     this.container = options.container;
@@ -184,6 +191,17 @@ export class EnvelopeScene {
     // 9. Event listeners
     this.handleResize = this.handleResize.bind(this);
     window.addEventListener('resize', this.handleResize);
+
+    // 3D vertical scrolling event listeners when card is unfolded into 3 pages
+    const dom = this.renderer.domElement;
+    dom.addEventListener('wheel', this.onWheel, { passive: false });
+    dom.addEventListener('touchstart', this.onTouchStart, { passive: true });
+    dom.addEventListener('touchmove', this.onTouchMove, { passive: false });
+    dom.addEventListener('touchend', this.onTouchEnd);
+    dom.addEventListener('touchcancel', this.onTouchEnd);
+    dom.addEventListener('pointerdown', this.onPointerDown);
+    window.addEventListener('pointermove', this.onPointerMove);
+    window.addEventListener('pointerup', this.onPointerUp);
 
     // 10. Start render loop
     this.animate = this.animate.bind(this);
@@ -458,6 +476,69 @@ export class EnvelopeScene {
     return this.isOpen;
   }
 
+  // 3D vertical scrolling handlers for unfolded card
+  private onWheel = (e: WheelEvent): void => {
+    if (!this.isUnfolded || this.unfoldTimeline) return;
+    e.preventDefault();
+    const visibleHeightIn3D = 2 * Math.tan((this.camera.fov * Math.PI) / 360) * this.camera.position.z;
+    const wheelSensitivity = (visibleHeightIn3D / window.innerHeight) * 0.9;
+    this.targetScrollY = Math.max(0, Math.min(6.0, this.targetScrollY + e.deltaY * wheelSensitivity));
+  };
+
+  private onTouchStart = (e: TouchEvent): void => {
+    if (!this.isUnfolded || this.unfoldTimeline || e.touches.length === 0) return;
+    this.touchStartY = e.touches[0].clientY;
+    this.touchStartScrollY = this.targetScrollY;
+    this.isTouchScrolling = true;
+  };
+
+  private onTouchMove = (e: TouchEvent): void => {
+    if (!this.isTouchScrolling || !this.isUnfolded || e.touches.length === 0) return;
+    if (e.cancelable) e.preventDefault();
+    const deltaY = e.touches[0].clientY - this.touchStartY;
+    const visibleHeightIn3D = 2 * Math.tan((this.camera.fov * Math.PI) / 360) * this.camera.position.z;
+    const sensitivity = (visibleHeightIn3D / window.innerHeight) * 1.0;
+    const rawTarget = this.touchStartScrollY - deltaY * sensitivity;
+    this.targetScrollY = Math.max(-0.35, Math.min(6.35, rawTarget));
+  };
+
+  private onTouchEnd = (): void => {
+    this.isTouchScrolling = false;
+    this.targetScrollY = Math.max(0, Math.min(6.0, this.targetScrollY));
+  };
+
+  private onPointerDown = (e: PointerEvent): void => {
+    if (!this.isUnfolded || this.unfoldTimeline || e.button !== 0) return;
+    this.pointerStartY = e.clientY;
+    this.pointerStartScrollY = this.targetScrollY;
+    this.isPointerScrolling = true;
+  };
+
+  private onPointerMove = (e: PointerEvent): void => {
+    if (!this.isPointerScrolling || !this.isUnfolded) return;
+    const deltaY = e.clientY - this.pointerStartY;
+    const visibleHeightIn3D = 2 * Math.tan((this.camera.fov * Math.PI) / 360) * this.camera.position.z;
+    const sensitivity = (visibleHeightIn3D / window.innerHeight) * 1.0;
+    const rawTarget = this.pointerStartScrollY - deltaY * sensitivity;
+    this.targetScrollY = Math.max(-0.35, Math.min(6.35, rawTarget));
+  };
+
+  private onPointerUp = (): void => {
+    this.isPointerScrolling = false;
+    this.targetScrollY = Math.max(0, Math.min(6.0, this.targetScrollY));
+  };
+
+  public getScrollProgress(): number {
+    return Math.max(0, Math.min(1, this.currentScrollY / 6.0));
+  }
+
+  public getScrollPage(): number {
+    const progress = this.getScrollProgress();
+    if (progress < 0.25) return 1;
+    if (progress < 0.75) return 2;
+    return 3;
+  }
+
   /**
    * Smoothly unfolds the 3-fold card out of the envelope to full screen width.
    * Clicking toggles between the unfolded reading view and the nestled envelope view.
@@ -478,80 +559,94 @@ export class EnvelopeScene {
     const halfFovTan = Math.tan(fovInRad / 2);
 
     if (this.isUnfolded) {
-      // 1. UNFOLD TO FULL READING VIEW & ZOOM IN TO FILL VIEWPORT:
-      // Width for full screen coverage (taking 98% of viewport width):
-      const zForCardWidth = 4.0 / (0.98 * 2 * halfFovTan * aspect);
-      const zForTopHeight = 3.0 / (0.95 * 2 * halfFovTan);
-      const targetZoomZ = Math.max(zForCardWidth, zForTopHeight);
+      // 1. UNFOLD TO FULL READING VIEW:
+      // Width for comfortable full-width reading (takes ~92% of screen width):
+      const zForCardWidth = 4.0 / (0.92 * 2 * halfFovTan * aspect);
+      // Height for comfortable single-page height reading (~85% screen height on desktop):
+      const zForPanelHeight = 3.0 / (0.85 * 2 * halfFovTan);
+      const targetUnfoldZ = Math.max(zForCardWidth, zForPanelHeight);
 
-      if (this.controls) this.controls.enabled = false;
+      // Disable orbit rotation immediately so user touches cannot rotate the scene
+      if (this.controls) {
+        this.controls.enableRotate = false;
+        this.controls.enableZoom = false;
+        this.controls.enabled = false;
+      }
+
+      this.targetScrollY = 0.0;
+      this.currentScrollY = 0.0;
 
       const tl = gsap.timeline({
         onComplete: () => {
           if (this.controls) {
-            this.controls.target.set(0, 3.0, 0);
+            this.controls.target.set(0, 0, 0);
             this.controls.update();
-            this.controls.enabled = true;
+            // In unfolded mode, controls remain disabled so dragging/swiping scrolls the card, NOT rotate!
+            this.controls.enabled = false;
+            this.controls.enableRotate = false;
+            this.controls.enableZoom = false;
           }
           this.unfoldTimeline = null;
-          this.onZoomInComplete?.();
         },
       });
       this.unfoldTimeline = tl;
 
-      // Phase 1: Camera glides and zooms in smoothly to frame the card full-screen centered on top panel
+      // Phase 1: Camera glides to frame the card flat at reading distance looking at (0, 0, 0)
       tl.to(this.camera.position, {
         x: 0,
-        y: 3.0,
-        z: targetZoomZ,
-        duration: 1.45,
+        y: 0,
+        z: targetUnfoldZ,
+        duration: 1.25,
         ease: 'power2.inOut',
         onUpdate: () => {
-          this.camera.lookAt(0, 3.0, 0);
+          this.camera.lookAt(0, 0, 0);
         },
       }, 0);
 
-      // Phase 2: Envelope lowers smoothly into the lower background
+      // Phase 2: Envelope root moves down to background
       tl.to(this.modelParts.root.position, {
-        y: -4.5,
-        duration: 1.20,
+        y: -4.2,
+        duration: 1.10,
         ease: 'power2.inOut',
       }, 0);
 
-      // Phase 3: Card position with organic gravity arc:
-      // Lifts up into free air, has a subtle downward gravity dip as the heavy folds swing down,
-      // and settles softly into the exact center of the screen (y = 3.0 places card center at y = 0.0)
+      tl.to(this.modelParts.root.rotation, {
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: 0.85,
+        ease: 'power2.inOut',
+      }, 0);
+
+      // Phase 3: Card position with organic gravity arc settling at y = 0.0 (Panel 1 at center)
       tl.to(this.modelParts.cardGroup.position, {
         keyframes: [
-          { y: 3.12, z: 0.44, duration: 0.55, ease: 'power2.out' },
-          { y: 2.96, z: 0.38, duration: 0.45, ease: 'sine.inOut' },
-          { y: 3.00, z: 0.35, duration: 0.45, ease: 'sine.out' },
+          { y: 0.20, z: 0.44, duration: 0.55, ease: 'power2.out' },
+          { y: -0.06, z: 0.38, duration: 0.45, ease: 'sine.inOut' },
+          { y: 0.00, z: 0.35, duration: 0.35, ease: 'sine.out' },
         ],
       }, 0);
 
-      // Phase 4: Organic 3D air resistance and subtle paper tilt / flutter
+      // Phase 4: Organic 3D air resistance and subtle paper tilt / flutter settling completely flat
       tl.to(this.modelParts.cardGroup.rotation, {
         keyframes: [
           { x: -0.045, y: -0.035, z: 0.028, duration: 0.45, ease: 'sine.out' },
           { x: 0.015, y: 0.020, z: -0.014, duration: 0.45, ease: 'sine.inOut' },
-          { x: 0.0, y: 0.0, z: 0.0, duration: 0.55, ease: 'sine.out' },
+          { x: 0.0, y: 0.0, z: 0.0, duration: 0.35, ease: 'sine.out' },
         ],
       }, 0);
 
       // Phase 5: Middle panel drops downward under gravity, swinging through flat
-      // with authentic momentum overshoot towards the viewer, followed by a damped elastic settle
       tl.to(this.modelParts.middlePanelHinge.rotation, {
         keyframes: [
           { x: Math.PI * 0.65, z: 0.016, duration: 0.35, ease: 'power1.in' },
           { x: -0.095, z: -0.008, duration: 0.45, ease: 'power2.out' },
           { x: 0.025, z: 0.003, duration: 0.30, ease: 'sine.inOut' },
-          { x: 0.0, z: 0.0, duration: 0.35, ease: 'sine.out' },
+          { x: 0.0, z: 0.0, duration: 0.25, ease: 'sine.out' },
         ],
       }, 0.05);
 
-      // Phase 6: Bottom panel cascading whip & unfurl:
-      // Trails behind initially due to inertia & drag, then as the middle panel opens,
-      // centrifugal force whips the bottom panel downwards with momentum, overshooting and settling
+      // Phase 6: Bottom panel cascading whip & unfurl
       tl.to(this.modelParts.bottomPanelHinge.rotation, {
         keyframes: [
           { x: -Math.PI * 0.92, z: -0.015, duration: 0.25, ease: 'power1.in' },
@@ -563,7 +658,8 @@ export class EnvelopeScene {
       }, 0.12);
     } else {
       // 2. FOLD BACK INTO NESTLED ENVELOPE:
-      if (this.controls) this.controls.enabled = false;
+      this.targetScrollY = 0;
+      this.currentScrollY = 0;
 
       const targetZ = this.calculateCameraDistance(width, height);
 
@@ -572,10 +668,11 @@ export class EnvelopeScene {
           if (this.controls) {
             this.controls.target.set(0, 0, 0);
             this.controls.update();
+            this.controls.enableRotate = true;
+            this.controls.enableZoom = true;
             this.controls.enabled = true;
           }
           this.unfoldTimeline = null;
-          this.onZoomOutComplete?.();
         },
       });
       this.unfoldTimeline = tl;
@@ -601,10 +698,10 @@ export class EnvelopeScene {
       // Step 3: Card glides smoothly back into envelope pocket
       tl.to(this.modelParts.cardGroup.position, {
         keyframes: [
-          { y: 3.05, z: 0.32, duration: 0.25, ease: 'sine.out' },
+          { y: 1.20, z: 0.32, duration: 0.25, ease: 'sine.out' },
           { y: 0.88, z: 0.010, duration: 0.75, ease: 'power2.inOut' },
         ],
-      }, 0.40);
+      }, 0.35);
 
       tl.to(this.modelParts.cardGroup.rotation, {
         x: 0,
@@ -638,24 +735,6 @@ export class EnvelopeScene {
 
   public getIsUnfolded(): boolean {
     return this.isUnfolded;
-  }
-
-  public setCallbacks(callbacks: {
-    onZoomInComplete?: () => void;
-    onZoomOutComplete?: () => void;
-  }): void {
-    this.onZoomInComplete = callbacks.onZoomInComplete;
-    this.onZoomOutComplete = callbacks.onZoomOutComplete;
-  }
-
-  public pauseRendering(): void {
-    this.isPaused = true;
-  }
-
-  public resumeRendering(): void {
-    if (!this.isPaused || this.isDisposed) return;
-    this.isPaused = false;
-    this.animate();
   }
 
   public updateGuest(name: string, category: string): void {
@@ -748,11 +827,21 @@ export class EnvelopeScene {
   }
 
   private animate(): void {
-    if (this.isDisposed || this.isPaused) return;
+    if (this.isDisposed) return;
     this.animationFrameId = requestAnimationFrame(this.animate);
 
     if (this.controls) {
       this.controls.update();
+    }
+
+    // 3D vertical scrolling when card is unfolded into 3 pages:
+    // Glides smoothly without any 3D rotation, allowing the user to read all 3 pages
+    if (this.isUnfolded && !this.unfoldTimeline) {
+      if (!this.isTouchScrolling && !this.isPointerScrolling) {
+        this.targetScrollY = Math.max(0, Math.min(6.0, this.targetScrollY));
+      }
+      this.currentScrollY += (this.targetScrollY - this.currentScrollY) * 0.12;
+      this.modelParts.cardGroup.position.y = this.currentScrollY;
     }
 
     // Gentle ambient floating wobble / giggle when idle and closed,
@@ -807,6 +896,16 @@ export class EnvelopeScene {
   public dispose(): void {
     this.isDisposed = true;
     window.removeEventListener('resize', this.handleResize);
+
+    const dom = this.renderer.domElement;
+    dom.removeEventListener('wheel', this.onWheel);
+    dom.removeEventListener('touchstart', this.onTouchStart);
+    dom.removeEventListener('touchmove', this.onTouchMove);
+    dom.removeEventListener('touchend', this.onTouchEnd);
+    dom.removeEventListener('touchcancel', this.onTouchEnd);
+    dom.removeEventListener('pointerdown', this.onPointerDown);
+    window.removeEventListener('pointermove', this.onPointerMove);
+    window.removeEventListener('pointerup', this.onPointerUp);
 
     if (this.giggleTimeline) {
       this.giggleTimeline.kill();

@@ -10,8 +10,8 @@ export interface Envelope3DRef {
   getIsOpen: () => boolean;
   toggleUnfold: () => boolean;
   getIsUnfolded: () => boolean;
-  pauseRendering: () => void;
-  resumeRendering: () => void;
+  getScrollProgress?: () => number;
+  getScrollPage?: () => number;
 }
 
 interface Envelope3DProps {
@@ -19,12 +19,10 @@ interface Envelope3DProps {
   category: string;
   className?: string;
   onReady?: () => void;
-  onZoomInComplete?: () => void;
-  onZoomOutComplete?: () => void;
 }
 
 export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
-  ({ guestName, category, className = '', onReady, onZoomInComplete, onZoomOutComplete }, ref) => {
+  ({ guestName, category, className = '', onReady }, ref) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const sceneRef = useRef<EnvelopeScene | null>(null);
 
@@ -46,11 +44,11 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
         getIsUnfolded: () => {
           return sceneRef.current ? sceneRef.current.getIsUnfolded() : false;
         },
-        pauseRendering: () => {
-          sceneRef.current?.pauseRendering();
+        getScrollProgress: () => {
+          return sceneRef.current ? sceneRef.current.getScrollProgress() : 0;
         },
-        resumeRendering: () => {
-          sceneRef.current?.resumeRendering();
+        getScrollPage: () => {
+          return sceneRef.current ? sceneRef.current.getScrollPage() : 1;
         },
       }),
       []
@@ -68,18 +66,13 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
       });
       sceneRef.current = scene;
 
-      scene.setCallbacks({
-        onZoomInComplete,
-        onZoomOutComplete,
-      });
-
       onReady?.();
 
       return () => {
         scene.dispose();
         sceneRef.current = null;
       };
-    }, [guestName, category, onReady, onZoomInComplete, onZoomOutComplete]);
+    }, [guestName, category, onReady]);
 
     return (
       <div

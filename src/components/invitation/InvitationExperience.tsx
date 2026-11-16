@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { EventDetails, GuestInfo, InvitationConfig } from '@/types/invitation';
 import type { Envelope3DRef } from './Envelope3D';
-import { InvitationFullReader } from './InvitationFullReader';
 
 const Envelope3D = dynamic(
   () => import('./Envelope3D').then((mod) => mod.Envelope3D),
@@ -29,37 +28,14 @@ interface InvitationExperienceProps {
 
 export function InvitationExperience({
   guestInfo,
-  events,
-  config,
 }: InvitationExperienceProps) {
   const envelope3DRef = useRef<Envelope3DRef | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isUnfolded, setIsUnfolded] = useState(false);
-  const [isReaderOpen, setIsReaderOpen] = useState(false);
-
-  const handleZoomInComplete = useCallback(() => {
-    setIsReaderOpen(true);
-    envelope3DRef.current?.pauseRendering();
-  }, []);
-
-  const handleZoomOutComplete = useCallback(() => {
-    // Zoom out complete
-  }, []);
-
-  const handleCloseReader = useCallback(() => {
-    setIsReaderOpen(false);
-    envelope3DRef.current?.resumeRendering();
-    if (envelope3DRef.current?.getIsUnfolded()) {
-      const state = envelope3DRef.current.toggleUnfold();
-      setIsUnfolded(state);
-    }
-  }, []);
 
   const handleToggle = () => {
     if (envelope3DRef.current) {
-      if (isReaderOpen) {
-        handleCloseReader();
-      } else if (isUnfolded) {
+      if (isUnfolded) {
         envelope3DRef.current.toggleUnfold();
         setIsUnfolded(false);
       }
@@ -70,10 +46,6 @@ export function InvitationExperience({
 
   const handleToggleUnfold = () => {
     if (envelope3DRef.current) {
-      if (isReaderOpen) {
-        handleCloseReader();
-        return;
-      }
       const state = envelope3DRef.current.toggleUnfold();
       setIsUnfolded(state);
     }
@@ -118,17 +90,15 @@ export function InvitationExperience({
             ref={envelope3DRef}
             guestName={guestInfo.displayName}
             category={guestInfo.category}
-            onZoomInComplete={handleZoomInComplete}
-            onZoomOutComplete={handleZoomOutComplete}
           />
         </div>
       </section>
 
-      {/* 4. Bottom Floating Action Controls (Active when not in full-screen reading mode) */}
-      {!isReaderOpen && (
-        <footer className="absolute bottom-8 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4">
-          <div className="flex items-center gap-3">
-            {/* OPEN / CLOSE BUTTON */}
+      {/* 4. Bottom Floating Action Controls */}
+      <footer className="absolute bottom-8 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4">
+        <div className="flex items-center gap-3">
+          {/* OPEN / CLOSE BUTTON (Shown when card is nestled in envelope) */}
+          {!isUnfolded && (
             <button
               onClick={handleToggle}
               className="group relative inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-900/60 via-amber-800/70 to-amber-900/60 text-amber-100 shadow-lg shadow-amber-950/50 backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 hover:border-amber-400/70"
@@ -139,9 +109,8 @@ export function InvitationExperience({
                 {isOpen ? 'Close Envelope' : 'Open Envelope'}
               </span>
               <svg
-                className={`w-3.5 h-3.5 text-amber-300/90 transition-transform duration-300 ${
-                  isOpen ? 'rotate-180' : ''
-                }`}
+                className={`w-3.5 h-3.5 text-amber-300/90 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''
+                  }`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -154,41 +123,41 @@ export function InvitationExperience({
                 />
               </svg>
             </button>
+          )}
 
-            {/* READ FULL button: appears when envelope is open */}
-            {isOpen && (
-              <button
-                onClick={handleToggleUnfold}
-                className="group relative inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-amber-400/70 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-stone-950 font-serif tracking-widest uppercase text-xs font-semibold shadow-xl shadow-amber-950/60 backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 hover:brightness-110"
-                aria-label={isUnfolded ? 'Fold Card' : 'Read Full'}
-              >
-                <svg className="w-3.5 h-3.5 text-stone-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {isUnfolded ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  )}
-                </svg>
-                <span>{isUnfolded ? 'Fold Card' : 'Read Full'}</span>
-              </button>
-            )}
-          </div>
+          {/* READ FULL / FOLD CARD button */}
+          {isOpen && (
+            <button
+              onClick={handleToggleUnfold}
+              className="group relative inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-amber-400/70 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-stone-950 font-serif tracking-widest uppercase text-xs font-semibold shadow-xl shadow-amber-950/60 backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 hover:brightness-110"
+              aria-label={isUnfolded ? 'Fold Card' : 'Read Full'}
+            >
+              <svg className="w-3.5 h-3.5 text-stone-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isUnfolded ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                )}
+              </svg>
+              <span>{isUnfolded ? 'Fold Card' : 'Read Full'}</span>
+            </button>
+          )}
+        </div>
 
-          {/* Rotate & Pinch hint */}
-          <div className="flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase text-neutral-400/80">
-            <span>{isUnfolded ? 'Card is opening to full reading mode...' : 'Swipe to rotate • Pinch to zoom'}</span>
-          </div>
-        </footer>
-      )}
-
-      {/* 5. Full-Screen 2D HTML/CSS Card Reader */}
-      <InvitationFullReader
-        guestInfo={guestInfo}
-        events={events}
-        config={config}
-        isOpen={isReaderOpen}
-        onClose={handleCloseReader}
-      />
+        {/* Rotate / Scroll Helper Hint */}
+        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/40 border border-amber-500/30 backdrop-blur-md text-[10px] font-mono tracking-widest uppercase text-amber-300/90 shadow-lg">
+          {isUnfolded ? (
+            <>
+              <svg className="w-3.5 h-3.5 text-amber-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+              <span>Scroll up / down to read all 3 pages</span>
+            </>
+          ) : (
+            <span>Swipe to rotate • Pinch to zoom</span>
+          )}
+        </div>
+      </footer>
     </main>
   );
 }
