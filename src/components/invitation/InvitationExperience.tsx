@@ -98,8 +98,8 @@ export function InvitationExperience({
       {/* 3b. Romantic Falling Pink Rose Petals Overlay */}
       <RosePetalsOverlay />
 
-      {/* 4. Bottom Floating Action Controls */}
-      <footer className="absolute bottom-8 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4">
+      {/* 4. Bottom Floating Action Controls (Elevated position for elegant prominence) */}
+      <footer className="absolute bottom-14 sm:bottom-16 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4">
         <div className="flex items-center gap-3">
           {/* OPEN / CLOSE BUTTON (Shown when card is nestled in envelope) */}
           {!isUnfolded && (
@@ -111,18 +111,18 @@ export function InvitationExperience({
               {/* Top parallel line blending with background gradually */}
               <span
                 aria-hidden="true"
-                className="w-36 sm:w-44 h-[1px] bg-gradient-to-r from-transparent via-amber-300/80 to-transparent transition-all duration-500 group-hover:via-amber-100 group-hover:w-44 sm:group-hover:w-52"
+                className="w-36 sm:w-48 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.5)] transition-all duration-500 group-hover:via-amber-300 group-hover:w-48 sm:group-hover:w-56"
               />
 
-              {/* Modern animated shining "OPEN" / "CLOSE" text */}
-              <span className="my-1.5 text-sm sm:text-base font-light tracking-[0.38em] uppercase animate-text-shine select-none drop-shadow-[0_0_12px_rgba(251,191,36,0.35)]">
+              {/* Modern animated shining golden "OPEN" / "CLOSE" text */}
+              <span className="my-2 text-base sm:text-lg font-normal tracking-[0.42em] uppercase animate-text-shine select-none drop-shadow-[0_0_14px_rgba(234,179,8,0.6)] drop-shadow-[0_0_2px_rgba(254,240,138,0.8)]">
                 {isOpen ? 'Close' : 'Open'}
               </span>
 
               {/* Bottom parallel line blending with background gradually */}
               <span
                 aria-hidden="true"
-                className="w-36 sm:w-44 h-[1px] bg-gradient-to-r from-transparent via-amber-300/80 to-transparent transition-all duration-500 group-hover:via-amber-100 group-hover:w-44 sm:group-hover:w-52"
+                className="w-36 sm:w-48 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.5)] transition-all duration-500 group-hover:via-amber-300 group-hover:w-48 sm:group-hover:w-56"
               />
             </button>
           )}
