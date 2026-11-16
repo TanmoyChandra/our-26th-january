@@ -21,6 +21,7 @@ export class EnvelopeScene {
   private controls: OrbitControls | null = null;
   private guestTexture: GuestNameTexture;
   private frontArtworkTexture: THREE.Texture | null = null;
+  private frontBumpTexture: THREE.Texture | null = null;
   private pocketArtworkTexture: THREE.Texture | null = null;
   private flapArtworkTexture: THREE.Texture | null = null;
   private cardArtworkTexture: THREE.Texture | null = null;
@@ -109,6 +110,18 @@ export class EnvelopeScene {
       }
     );
 
+    this.frontBumpTexture = textureLoader.load(
+      ENVELOPE_CONFIG.materials.frontBumpPath,
+      (tex) => {
+        tex.generateMipmaps = true;
+        if (this.materials.paperFrontArt) {
+          this.materials.paperFrontArt.bumpMap = tex;
+          this.materials.paperFrontArt.bumpScale = 0.055;
+          this.materials.paperFrontArt.needsUpdate = true;
+        }
+      }
+    );
+
     this.pocketArtworkTexture = textureLoader.load(
       ENVELOPE_CONFIG.materials.pocketTexturePath,
       (tex) => {
@@ -164,7 +177,8 @@ export class EnvelopeScene {
       this.pocketArtworkTexture,
       this.flapArtworkTexture,
       this.cardArtworkTexture,
-      this.cardBackArtworkTexture
+      this.cardBackArtworkTexture,
+      this.frontBumpTexture
     );
     this.modelParts = createEnvelopeModel(this.materials);
     this.scene.add(this.modelParts.root);
@@ -1109,6 +1123,7 @@ export class EnvelopeScene {
 
     this.guestTexture.dispose();
     if (this.frontArtworkTexture) this.frontArtworkTexture.dispose();
+    if (this.frontBumpTexture) this.frontBumpTexture.dispose();
     if (this.pocketArtworkTexture) this.pocketArtworkTexture.dispose();
     if (this.flapArtworkTexture) this.flapArtworkTexture.dispose();
     if (this.cardArtworkTexture) this.cardArtworkTexture.dispose();

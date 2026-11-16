@@ -18,7 +18,8 @@ export function createEnvelopeMaterials(
   pocketTexture?: THREE.Texture | null,
   flapTexture?: THREE.Texture | null,
   cardTexture?: THREE.Texture | null,
-  cardBackTexture?: THREE.Texture | null
+  cardBackTexture?: THREE.Texture | null,
+  frontBumpTexture?: THREE.Texture | null
 ): EnvelopeMaterialsMap {
   const { materials } = ENVELOPE_CONFIG;
   const baseColor = new THREE.Color(materials.paperColor);
@@ -35,14 +36,16 @@ export function createEnvelopeMaterials(
     depthWrite: true,
   });
 
-  // Plain side front face with custom artwork texture
+  // Plain side front face with custom artwork texture and tactile 3D height / bump map
   const paperFrontArt = new THREE.MeshStandardMaterial({
     map: frontTexture || null,
+    bumpMap: frontBumpTexture || null,
+    bumpScale: 0.055, // Tactile embossed relief for couple artwork and lotus ornaments
     color: frontTexture ? 0xffffff : baseColor,
     transparent: true,
-    alphaTest: 0.1,
-    roughness: 0.78,
-    metalness: 0.05,
+    alphaTest: 0.05,
+    roughness: 0.65,
+    metalness: 0.08,
     side: THREE.FrontSide,
     depthWrite: true,
   });
