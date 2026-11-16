@@ -61,11 +61,10 @@ export function InvitationExperience({
         <img
           src="/images/space_background.jpg"
           alt="Wedding venue ambience"
-          className="w-full h-full object-cover object-center"
+          className="w-full h-full object-cover object-center brightness-105 contrast-[1.02]"
         />
-        {/* Ambient lighting & subtle vignette overlay to give depth and maintain contrast for envelope & UI */}
-        <div className="absolute inset-0 bg-black/25 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/50 pointer-events-none" />
+        {/* Soft, light vignette solely at the bottom edge for button contrast, keeping the background bright & luminous */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
       </div>
 
       {/* 2. Top-Left Floral Corner Ornament (Rendered with vintage ambient warmth behind 3D envelope) */}
@@ -75,8 +74,8 @@ export function InvitationExperience({
           alt=""
           className="w-36 sm:w-48 md:w-60 lg:w-72 max-w-[45vw] h-auto object-contain object-left-top drop-shadow-lg"
           style={{
-            filter: 'sepia(24%) brightness(88%) contrast(96%) saturate(88%)',
-            opacity: 0.88,
+            filter: 'sepia(18%) brightness(96%) contrast(98%) saturate(94%)',
+            opacity: 0.94,
           }}
         />
       </div>
