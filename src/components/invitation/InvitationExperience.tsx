@@ -68,20 +68,6 @@ export function InvitationExperience({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/50 pointer-events-none" />
       </div>
 
-      {/* 2. Top Bar (Header) */}
-      <header className="absolute top-0 left-0 right-0 z-20 px-6 pt-6 flex justify-between items-center pointer-events-none">
-        <div className="flex flex-col">
-          <span className="text-[10px] uppercase font-mono tracking-[0.25em] text-amber-500/80">
-            26 &bull; 01 &bull; 2027
-          </span>
-          <span className="font-serif italic text-xs text-neutral-400 mt-0.5">
-            Wedding Celebration
-          </span>
-        </div>
-        <div className="px-2.5 py-1 rounded-full border border-amber-500/20 bg-amber-950/40 backdrop-blur-md text-[10px] font-mono uppercase tracking-widest text-amber-300/80">
-          {guestInfo.category}
-        </div>
-      </header>
 
       {/* 3. Interactive 3D Envelope Viewport: Full Screen Viewport */}
       <section
