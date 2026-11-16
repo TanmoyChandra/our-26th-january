@@ -11,6 +11,7 @@ export interface EnvelopeSceneOptions {
   guestName: string;
   category: string;
   interactiveRotation?: boolean;
+  onAnimationChange?: (isAnimating: boolean) => void;
 }
 
 export class EnvelopeScene {
@@ -37,6 +38,7 @@ export class EnvelopeScene {
   private unfoldTimeline: gsap.core.Timeline | null = null;
   private isUnfolded = false;
   private entranceGiggleDone = false;
+  private onAnimationChange?: (isAnimating: boolean) => void;
   private startTime = performance.now();
 
   // 3D vertical scrolling and interactive horizontal tilt state when card is unfolded into 3 pages
@@ -57,6 +59,7 @@ export class EnvelopeScene {
 
   constructor(options: EnvelopeSceneOptions) {
     this.container = options.container;
+    this.onAnimationChange = options.onAnimationChange;
 
     // 1. Scene
     this.scene = new THREE.Scene();
@@ -339,9 +342,11 @@ export class EnvelopeScene {
         onComplete: () => {
           if (this.controls) this.controls.enabled = true;
           this.openTimeline = null;
+          this.onAnimationChange?.(false);
         },
       });
       this.openTimeline = tl;
+      this.onAnimationChange?.(true);
 
       // Phase 1: Smoothly orient envelope & camera so back side faces viewer squarely
       tl.to(animState, {
@@ -425,9 +430,11 @@ export class EnvelopeScene {
           if (this.controls) this.controls.enabled = true;
           this.openTimeline = null;
           this.startTime = performance.now();
+          this.onAnimationChange?.(false);
         },
       });
       this.openTimeline = tl;
+      this.onAnimationChange?.(true);
 
       // Step 1: If card was unfolded, fold panels back immediately
       if (this.isUnfolded) {
@@ -552,6 +559,10 @@ export class EnvelopeScene {
 
   public getIsOpen(): boolean {
     return this.isOpen;
+  }
+
+  public getIsAnimating(): boolean {
+    return Boolean(this.openTimeline || this.unfoldTimeline);
   }
 
   /**
@@ -696,9 +707,11 @@ export class EnvelopeScene {
             this.controls.enableZoom = false;
           }
           this.unfoldTimeline = null;
+          this.onAnimationChange?.(false);
         },
       });
       this.unfoldTimeline = tl;
+      this.onAnimationChange?.(true);
 
       // PHASE 1: Card pulls UP completely out of the envelope pocket first!
       // (Shows the user clearly that the card has emerged fully before unfolding)
@@ -815,9 +828,11 @@ export class EnvelopeScene {
             this.controls.enabled = true;
           }
           this.unfoldTimeline = null;
+          this.onAnimationChange?.(false);
         },
       });
       this.unfoldTimeline = tl;
+      this.onAnimationChange?.(true);
 
       // PHASE 1: Card folds up while rising to hover above the envelope opening
       tl.to(this.modelParts.cardGroup.position, {

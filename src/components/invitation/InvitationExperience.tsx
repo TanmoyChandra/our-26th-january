@@ -35,8 +35,10 @@ export function InvitationExperience({
   const envelope3DRef = useRef<Envelope3DRef | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isUnfolded, setIsUnfolded] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const handleToggle = () => {
+    if (isAnimating) return; // Prevent any interaction while animation is playing
     if (envelope3DRef.current) {
       if (isUnfolded) {
         envelope3DRef.current.toggleUnfold();
@@ -48,6 +50,7 @@ export function InvitationExperience({
   };
 
   const handleToggleUnfold = () => {
+    if (isAnimating) return; // Prevent any interaction while animation is playing
     if (envelope3DRef.current) {
       const state = envelope3DRef.current.toggleUnfold();
       setIsUnfolded(state);
@@ -96,6 +99,7 @@ export function InvitationExperience({
             ref={envelope3DRef}
             guestName={guestInfo.displayName}
             category={guestInfo.category}
+            onAnimationChange={setIsAnimating}
           />
         </div>
       </section>
@@ -103,8 +107,14 @@ export function InvitationExperience({
       {/* 3b. Romantic Falling Pink Rose Petals Overlay */}
       <RosePetalsOverlay />
 
-      {/* 4. Bottom Floating Action Controls (Elevated position for elegant prominence) */}
-      <footer className="absolute bottom-14 sm:bottom-16 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4">
+      {/* 4. Bottom Floating Action Controls (Fades out smoothly during 3D animations and locks interaction) */}
+      <footer
+        className={`absolute bottom-14 sm:bottom-16 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4 transition-all duration-400 ease-in-out ${
+          isAnimating
+            ? 'opacity-0 pointer-events-none translate-y-3'
+            : 'opacity-100 pointer-events-auto translate-y-0'
+        }`}
+      >
         <div className="flex items-center gap-3">
           {/* OPEN / CLOSE BUTTON (Shown when card is nestled in envelope) */}
           {!isUnfolded && (
@@ -176,7 +186,7 @@ export function InvitationExperience({
 
       {/* 5. Google Maps Venue Location Shortcut (Bottom Right when unfolded: circular icon button) */}
       <AnimatePresence>
-        {isUnfolded && (
+        {isUnfolded && !isAnimating && (
           <m.aside
             initial={{ opacity: 0, scale: 0.7, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

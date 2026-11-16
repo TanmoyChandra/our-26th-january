@@ -10,6 +10,7 @@ export interface Envelope3DRef {
   getIsOpen: () => boolean;
   toggleUnfold: () => boolean;
   getIsUnfolded: () => boolean;
+  isAnimating: () => boolean;
   getScrollProgress?: () => number;
   getScrollPage?: () => number;
 }
@@ -19,10 +20,11 @@ interface Envelope3DProps {
   category: string;
   className?: string;
   onReady?: () => void;
+  onAnimationChange?: (isAnimating: boolean) => void;
 }
 
 export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
-  ({ guestName, category, className = '', onReady }, ref) => {
+  ({ guestName, category, className = '', onReady, onAnimationChange }, ref) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const sceneRef = useRef<EnvelopeScene | null>(null);
 
@@ -44,6 +46,9 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
         getIsUnfolded: () => {
           return sceneRef.current ? sceneRef.current.getIsUnfolded() : false;
         },
+        isAnimating: () => {
+          return sceneRef.current ? sceneRef.current.getIsAnimating() : false;
+        },
         getScrollProgress: () => {
           return sceneRef.current ? sceneRef.current.getScrollProgress() : 0;
         },
@@ -63,6 +68,7 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
         guestName,
         category,
         interactiveRotation: true,
+        onAnimationChange,
       });
       sceneRef.current = scene;
 
@@ -72,7 +78,7 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
         scene.dispose();
         sceneRef.current = null;
       };
-    }, [guestName, category, onReady]);
+    }, [guestName, category, onReady, onAnimationChange]);
 
     return (
       <div
