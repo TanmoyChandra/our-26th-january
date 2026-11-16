@@ -668,11 +668,8 @@ export class EnvelopeScene {
 
     if (this.isUnfolded) {
       // 1. UNFOLD TO FULL READING VIEW:
-      // Width for comfortable full-width reading (takes ~92% of screen width):
-      const zForCardWidth = 4.0 / (0.92 * 2 * halfFovTan * aspect);
-      // Height for comfortable single-page height reading (~85% screen height on desktop):
-      const zForPanelHeight = 3.0 / (0.85 * 2 * halfFovTan);
-      const targetUnfoldZ = Math.max(zForCardWidth, zForPanelHeight);
+      // Uses calculateUnfoldCameraDistance so card takes 95.5% width on mobile, leaving minimal side margins
+      const targetUnfoldZ = this.calculateUnfoldCameraDistance(width, height);
 
       // Disable orbit rotation immediately so user touches cannot rotate the scene
       if (this.controls) {
@@ -954,6 +951,35 @@ export class EnvelopeScene {
   }
 
   /**
+   * Calculates the exact camera Z distance when the card is unfolded into 3 panels.
+   * On portrait/mobile displays, the card occupies ~95.5% of the visible screen width,
+   * leaving very little margins on the left and right sides so the invitation is prominent and easy to read.
+   */
+  public calculateUnfoldCameraDistance(width: number, height: number): number {
+    const aspect = width / height;
+    const fovInRad = (this.camera.fov * Math.PI) / 180;
+    const halfFovTan = Math.tan(fovInRad / 2);
+    const cardW = 4.0;
+    const cardZ = 0.35; // cardGroup is at z = 0.35 when unfolded
+
+    // On portrait / mobile displays (aspect < 0.92):
+    // Target: Card occupies 95.5% (0.955) of screen width (very minimal side margins)
+    const desiredPortraitWidthRatio = 0.955;
+    const zForCardWidth = cardZ + cardW / (desiredPortraitWidthRatio * 2 * halfFovTan * aspect);
+
+    // On landscape / desktop displays (aspect >= 0.92):
+    // Single page height takes ~88% of screen height so it fits comfortably without vertical clipping
+    const cardH = 3.0;
+    const desiredDesktopHeightRatio = 0.88;
+    const zForPanelHeight = cardZ + cardH / (desiredDesktopHeightRatio * 2 * halfFovTan);
+
+    if (aspect < 0.92) {
+      return zForCardWidth;
+    }
+    return Math.max(zForCardWidth, zForPanelHeight);
+  }
+
+  /**
    * Plays a 3D entrance giggle/rotate teaser when the page opens,
    * gently tilting the envelope left & right to reveal its 3D depth,
    * golden rim thickness (#D2B789), and dynamic lighting so users
@@ -1068,16 +1094,22 @@ export class EnvelopeScene {
     if (width === 0 || height === 0) return;
 
     this.camera.aspect = width / height;
-    const newTargetZ = this.calculateCameraDistance(width, height);
     this.camera.updateProjectionMatrix();
 
-    if (this.controls) {
-      this.camera.position.setLength(newTargetZ);
-      this.controls.minDistance = Math.min(3.5, newTargetZ * 0.4);
-      this.controls.maxDistance = Math.max(26.0, newTargetZ * 2.0);
-      this.controls.update();
+    if (this.isUnfolded) {
+      const targetUnfoldZ = this.calculateUnfoldCameraDistance(width, height);
+      this.camera.position.set(0, 0, targetUnfoldZ);
+      this.camera.lookAt(0, 0, 0);
     } else {
-      this.camera.position.z = newTargetZ;
+      const newTargetZ = this.calculateCameraDistance(width, height);
+      if (this.controls) {
+        this.camera.position.setLength(newTargetZ);
+        this.controls.minDistance = Math.min(3.5, newTargetZ * 0.4);
+        this.controls.maxDistance = Math.max(26.0, newTargetZ * 2.0);
+        this.controls.update();
+      } else {
+        this.camera.position.z = newTargetZ;
+      }
     }
 
     this.renderer.setSize(width, height);
