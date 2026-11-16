@@ -12,6 +12,7 @@ export interface EnvelopeSceneOptions {
   category: string;
   interactiveRotation?: boolean;
   onAnimationChange?: (isAnimating: boolean) => void;
+  onUnfoldChange?: (isUnfolded: boolean) => void;
 }
 
 export class EnvelopeScene {
@@ -39,8 +40,17 @@ export class EnvelopeScene {
   private isUnfolded = false;
   private entranceGiggleDone = false;
   private onAnimationChange?: (isAnimating: boolean) => void;
+  private onUnfoldChange?: (isUnfolded: boolean) => void;
   private resizeObserver: ResizeObserver | null = null;
   private startTime = performance.now();
+
+  // Raycaster & tap detection for interactive direct card tapping
+  private raycaster = new THREE.Raycaster();
+  private mouseVector = new THREE.Vector2();
+  private tapStartX = 0;
+  private tapStartY = 0;
+  private tapStartTime = 0;
+  private lastTapTriggeredTime = 0;
 
   // 3D vertical scrolling and interactive horizontal tilt state when card is unfolded into 3 pages
   private targetScrollY = 0;
@@ -61,6 +71,7 @@ export class EnvelopeScene {
   constructor(options: EnvelopeSceneOptions) {
     this.container = options.container;
     this.onAnimationChange = options.onAnimationChange;
+    this.onUnfoldChange = options.onUnfoldChange;
 
     // 1. Scene
     this.scene = new THREE.Scene();
@@ -232,6 +243,7 @@ export class EnvelopeScene {
     dom.addEventListener('touchend', this.onTouchEnd);
     dom.addEventListener('touchcancel', this.onTouchEnd);
     dom.addEventListener('pointerdown', this.onPointerDown);
+    dom.addEventListener('click', this.onClick);
     window.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
 
@@ -626,7 +638,37 @@ export class EnvelopeScene {
     this.targetTiltZ = 0.0;
   };
 
+  private onClick = (e: MouseEvent): void => {
+    this.handleCardTap(e.clientX, e.clientY);
+  };
+
+  /**
+   * Directly tapping/clicking on the 3D card when the envelope is open
+   * triggers the card to emerge fully and unfold (matching the READ button action).
+   */
+  private handleCardTap = (clientX: number, clientY: number): void => {
+    if (this.isDisposed || !this.isOpen || this.isUnfolded || this.getIsAnimating()) return;
+    if (performance.now() - this.lastTapTriggeredTime < 600) return;
+
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.mouseVector.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouseVector.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.mouseVector, this.camera);
+    const intersects = this.raycaster.intersectObject(this.modelParts.cardGroup, true);
+
+    if (intersects.length > 0) {
+      this.lastTapTriggeredTime = performance.now();
+      const newUnfolded = this.toggleUnfold();
+      this.onUnfoldChange?.(newUnfolded);
+    }
+  };
+
   private onPointerDown = (e: PointerEvent): void => {
+    this.tapStartX = e.clientX;
+    this.tapStartY = e.clientY;
+    this.tapStartTime = performance.now();
+
     if (!this.isUnfolded || this.unfoldTimeline || e.button !== 0) return;
     this.pointerStartX = e.clientX;
     this.pointerStartY = e.clientY;
@@ -635,6 +677,20 @@ export class EnvelopeScene {
   };
 
   private onPointerMove = (e: PointerEvent): void => {
+    // Hover cursor feedback when the exposed card can be tapped to unfold
+    if (this.isOpen && !this.isUnfolded && !this.getIsAnimating()) {
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      this.mouseVector.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouseVector.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      this.raycaster.setFromCamera(this.mouseVector, this.camera);
+      const intersects = this.raycaster.intersectObject(this.modelParts.cardGroup, true);
+      if (intersects.length > 0) {
+        this.renderer.domElement.style.cursor = 'pointer';
+      } else {
+        this.renderer.domElement.style.cursor = 'grab';
+      }
+    }
+
     if (!this.isPointerScrolling || !this.isUnfolded) return;
     const deltaX = e.clientX - this.pointerStartX;
     const deltaY = e.clientY - this.pointerStartY;
@@ -649,7 +705,13 @@ export class EnvelopeScene {
     this.targetTiltZ = Math.max(-0.02, Math.min(0.02, -deltaX * tiltSensitivity * 0.15));
   };
 
-  private onPointerUp = (): void => {
+  private onPointerUp = (e: PointerEvent): void => {
+    const tapDist = Math.hypot(e.clientX - this.tapStartX, e.clientY - this.tapStartY);
+    const tapDuration = performance.now() - this.tapStartTime;
+    if (tapDist <= 10 && tapDuration < 500) {
+      this.handleCardTap(e.clientX, e.clientY);
+    }
+
     this.isPointerScrolling = false;
     this.targetScrollY = Math.max(0, Math.min(6.0, this.targetScrollY));
     this.targetTiltY = 0.0;
@@ -1159,6 +1221,7 @@ export class EnvelopeScene {
     dom.removeEventListener('touchend', this.onTouchEnd);
     dom.removeEventListener('touchcancel', this.onTouchEnd);
     dom.removeEventListener('pointerdown', this.onPointerDown);
+    dom.removeEventListener('click', this.onClick);
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
 

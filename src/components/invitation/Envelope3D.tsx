@@ -21,10 +21,11 @@ interface Envelope3DProps {
   className?: string;
   onReady?: () => void;
   onAnimationChange?: (isAnimating: boolean) => void;
+  onUnfoldChange?: (isUnfolded: boolean) => void;
 }
 
 export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
-  ({ guestName, category, className = '', onReady, onAnimationChange }, ref) => {
+  ({ guestName, category, className = '', onReady, onAnimationChange, onUnfoldChange }, ref) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const sceneRef = useRef<EnvelopeScene | null>(null);
 
@@ -69,6 +70,7 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
         category,
         interactiveRotation: true,
         onAnimationChange,
+        onUnfoldChange,
       });
       sceneRef.current = scene;
 
@@ -78,7 +80,7 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
         scene.dispose();
         sceneRef.current = null;
       };
-    }, [guestName, category, onReady, onAnimationChange]);
+    }, [guestName, category, onReady, onAnimationChange, onUnfoldChange]);
 
     return (
       <div

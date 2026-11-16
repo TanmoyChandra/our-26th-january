@@ -101,6 +101,7 @@ export function InvitationExperience({
             guestName={guestInfo.displayName}
             category={guestInfo.category}
             onAnimationChange={setIsAnimating}
+            onUnfoldChange={setIsUnfolded}
           />
         </div>
       </section>
