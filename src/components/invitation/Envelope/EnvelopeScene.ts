@@ -37,6 +37,9 @@ export class EnvelopeScene {
   private isUnfolded = false;
   private entranceGiggleDone = false;
   private startTime = performance.now();
+  private onZoomInComplete?: () => void;
+  private onZoomOutComplete?: () => void;
+  private isPaused = false;
 
   constructor(options: EnvelopeSceneOptions) {
     this.container = options.container;
@@ -475,43 +478,42 @@ export class EnvelopeScene {
     const halfFovTan = Math.tan(fovInRad / 2);
 
     if (this.isUnfolded) {
-      // 1. UNFOLD TO FULL READING VIEW:
-      // The 3-fold card is 4.0 wide x 9.0 tall.
-      // Width at 90% screen width:
-      const zForCardWidth = 4.0 / (0.90 * 2 * halfFovTan * aspect);
-      // Height at 88% screen height:
-      const zForCardHeight = 9.0 / (0.88 * 2 * halfFovTan);
-      const targetUnfoldZ = Math.max(zForCardWidth, zForCardHeight);
+      // 1. UNFOLD TO FULL READING VIEW & ZOOM IN TO FILL VIEWPORT:
+      // Width for full screen coverage (taking 98% of viewport width):
+      const zForCardWidth = 4.0 / (0.98 * 2 * halfFovTan * aspect);
+      const zForTopHeight = 3.0 / (0.95 * 2 * halfFovTan);
+      const targetZoomZ = Math.max(zForCardWidth, zForTopHeight);
 
       if (this.controls) this.controls.enabled = false;
 
       const tl = gsap.timeline({
         onComplete: () => {
           if (this.controls) {
-            this.controls.target.set(0, 0, 0);
+            this.controls.target.set(0, 3.0, 0);
             this.controls.update();
             this.controls.enabled = true;
           }
           this.unfoldTimeline = null;
+          this.onZoomInComplete?.();
         },
       });
       this.unfoldTimeline = tl;
 
-      // Phase 1: Camera glides to frame the 3-fold card at full width
+      // Phase 1: Camera glides and zooms in smoothly to frame the card full-screen centered on top panel
       tl.to(this.camera.position, {
         x: 0,
-        y: 0,
-        z: targetUnfoldZ,
-        duration: 1.35,
+        y: 3.0,
+        z: targetZoomZ,
+        duration: 1.45,
         ease: 'power2.inOut',
         onUpdate: () => {
-          this.camera.lookAt(0, 0, 0);
+          this.camera.lookAt(0, 3.0, 0);
         },
       }, 0);
 
       // Phase 2: Envelope lowers smoothly into the lower background
       tl.to(this.modelParts.root.position, {
-        y: -3.8,
+        y: -4.5,
         duration: 1.20,
         ease: 'power2.inOut',
       }, 0);
@@ -523,7 +525,7 @@ export class EnvelopeScene {
         keyframes: [
           { y: 3.12, z: 0.44, duration: 0.55, ease: 'power2.out' },
           { y: 2.96, z: 0.38, duration: 0.45, ease: 'sine.inOut' },
-          { y: 3.00, z: 0.35, duration: 0.35, ease: 'sine.out' },
+          { y: 3.00, z: 0.35, duration: 0.45, ease: 'sine.out' },
         ],
       }, 0);
 
@@ -532,7 +534,7 @@ export class EnvelopeScene {
         keyframes: [
           { x: -0.045, y: -0.035, z: 0.028, duration: 0.45, ease: 'sine.out' },
           { x: 0.015, y: 0.020, z: -0.014, duration: 0.45, ease: 'sine.inOut' },
-          { x: 0.0, y: 0.0, z: 0.0, duration: 0.45, ease: 'sine.out' },
+          { x: 0.0, y: 0.0, z: 0.0, duration: 0.55, ease: 'sine.out' },
         ],
       }, 0);
 
@@ -543,7 +545,7 @@ export class EnvelopeScene {
           { x: Math.PI * 0.65, z: 0.016, duration: 0.35, ease: 'power1.in' },
           { x: -0.095, z: -0.008, duration: 0.45, ease: 'power2.out' },
           { x: 0.025, z: 0.003, duration: 0.30, ease: 'sine.inOut' },
-          { x: 0.0, z: 0.0, duration: 0.25, ease: 'sine.out' },
+          { x: 0.0, z: 0.0, duration: 0.35, ease: 'sine.out' },
         ],
       }, 0.05);
 
@@ -573,6 +575,7 @@ export class EnvelopeScene {
             this.controls.enabled = true;
           }
           this.unfoldTimeline = null;
+          this.onZoomOutComplete?.();
         },
       });
       this.unfoldTimeline = tl;
@@ -635,6 +638,24 @@ export class EnvelopeScene {
 
   public getIsUnfolded(): boolean {
     return this.isUnfolded;
+  }
+
+  public setCallbacks(callbacks: {
+    onZoomInComplete?: () => void;
+    onZoomOutComplete?: () => void;
+  }): void {
+    this.onZoomInComplete = callbacks.onZoomInComplete;
+    this.onZoomOutComplete = callbacks.onZoomOutComplete;
+  }
+
+  public pauseRendering(): void {
+    this.isPaused = true;
+  }
+
+  public resumeRendering(): void {
+    if (!this.isPaused || this.isDisposed) return;
+    this.isPaused = false;
+    this.animate();
   }
 
   public updateGuest(name: string, category: string): void {
@@ -727,7 +748,7 @@ export class EnvelopeScene {
   }
 
   private animate(): void {
-    if (this.isDisposed) return;
+    if (this.isDisposed || this.isPaused) return;
     this.animationFrameId = requestAnimationFrame(this.animate);
 
     if (this.controls) {
