@@ -19,12 +19,12 @@ interface Petal {
   variant: number;
 }
 
-const PETAL_COUNT = 32;
+const PETAL_COUNT = 45;
 
 /**
  * RosePetalsOverlay
- * Renders a slow, romantic cascade of delicate pink rose petals drifting down across the screen.
- * Respects reduced-motion preferences, has zero layout shift, and pointer-events: none.
+ * Renders a slow, dreamy cascade of delicate pink rose petals gently drifting
+ * down from the top across the entire invitation screen.
  */
 export function RosePetalsOverlay() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -33,113 +33,124 @@ export function RosePetalsOverlay() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Check reduced motion preference
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return;
-    }
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+    let width = window.innerWidth;
+    let height = window.innerHeight;
 
-    const handleResize = () => {
+    const resize = () => {
       if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform before scaling
+      ctx.scale(dpr, dpr);
     };
 
-    window.addEventListener('resize', handleResize);
+    resize();
+    window.addEventListener('resize', resize);
 
-    // Color definitions for rose petal variants
+    // Rich, romantic pink rose color palettes
     const petalColors = [
       {
         inner: '#fff1f2',
         mid: '#fbcfe8',
         outer: '#f472b6',
-        shadow: '#e11d48',
+        edge: '#db2777',
       },
       {
         inner: '#ffe4e6',
         mid: '#fda4af',
         outer: '#fb7185',
-        shadow: '#be123c',
+        edge: '#e11d48',
       },
       {
         inner: '#ffffff',
         mid: '#fce7f3',
         outer: '#f43f5e',
-        shadow: '#9f1239',
+        edge: '#be123c',
       },
       {
-        inner: '#fff0f3',
+        inner: '#fff5f7',
         mid: '#f9a8d4',
         outer: '#ec4899',
-        shadow: '#db2777',
+        edge: '#9d174d',
+      },
+      {
+        inner: '#ffeef2',
+        mid: '#fecdd3',
+        outer: '#f43f5e',
+        edge: '#881337',
       },
     ];
 
-    // Helper to generate a petal
+    // Helper to generate a single petal
     const createPetal = (initialY?: number): Petal => ({
       x: Math.random() * width,
-      y: initialY !== undefined ? initialY : -30 - Math.random() * 50,
-      size: 10 + Math.random() * 11, // 10px to 21px
-      speedY: 0.35 + Math.random() * 0.45, // Serene slow fall (0.35 to 0.80 px/frame)
-      speedX: (Math.random() - 0.5) * 0.3,
-      swaySpeed: 0.008 + Math.random() * 0.012,
-      swayAmplitude: 0.8 + Math.random() * 1.4,
+      y: initialY !== undefined ? initialY : -40 - Math.random() * 80,
+      size: 16 + Math.random() * 16, // 16px to 32px: clearly visible and identifiable
+      speedY: 0.45 + Math.random() * 0.55, // Very slow, peaceful fall speed
+      speedX: (Math.random() - 0.5) * 0.4,
+      swaySpeed: 0.01 + Math.random() * 0.015,
+      swayAmplitude: 0.8 + Math.random() * 1.5,
       swayPhase: Math.random() * Math.PI * 2,
       rotation: Math.random() * Math.PI * 2,
-      rotationSpeed: (Math.random() - 0.5) * 0.015,
+      rotationSpeed: (Math.random() - 0.5) * 0.02,
       flip: Math.random() * Math.PI * 2,
-      flipSpeed: 0.01 + Math.random() * 0.02,
-      opacity: 0.65 + Math.random() * 0.28,
+      flipSpeed: 0.015 + Math.random() * 0.025,
+      opacity: 0.75 + Math.random() * 0.22,
       variant: Math.floor(Math.random() * petalColors.length),
     });
 
-    // Populate petals distributed across the screen initially so they don't all appear from the top at once
+    // Distribute petals across the viewport initially so petals are visible immediately
     const petals: Petal[] = Array.from({ length: PETAL_COUNT }, () =>
       createPetal(Math.random() * height)
     );
 
     let animationFrameId: number;
 
-    const render = (time: number) => {
+    const render = () => {
       ctx.clearRect(0, 0, width, height);
 
       for (let i = 0; i < petals.length; i++) {
         const p = petals[i];
 
-        // Motion update
+        // Motion physics: slow gentle downward drift with lateral breeze sway
         p.swayPhase += p.swaySpeed;
         p.x += Math.sin(p.swayPhase) * p.swayAmplitude + p.speedX;
         p.y += p.speedY;
         p.rotation += p.rotationSpeed;
         p.flip += p.flipSpeed;
 
-        // Reset if drifted past bottom or sides
-        if (p.y > height + 35) {
-          petals[i] = createPetal(-25);
+        // Recycle when drifted past bottom or sides
+        if (p.y > height + 45) {
+          petals[i] = createPetal(-35);
           continue;
         }
-        if (p.x < -40) p.x = width + 20;
-        else if (p.x > width + 40) p.x = -20;
+        if (p.x < -50) p.x = width + 30;
+        else if (p.x > width + 50) p.x = -30;
 
-        // 3D Tumbling projection: flip determines scaleX
-        const scaleX = Math.cos(p.flip);
-        const scaleY = 1;
+        // 3D tumbling perspective
+        const scaleX = Math.max(0.18, Math.abs(Math.cos(p.flip)));
+        const s = p.size;
+        const col = petalColors[p.variant];
 
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rotation);
-        ctx.scale(scaleX, scaleY);
-        ctx.globalAlpha = p.opacity * Math.max(0.25, Math.abs(scaleX));
+        ctx.scale(scaleX, 1);
+        ctx.globalAlpha = p.opacity;
 
-        const s = p.size;
-        const col = petalColors[p.variant];
+        // Subtle drop shadow for depth against 3D envelope and background
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.22)';
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 2;
 
-        // Draw organic curved rose petal path
+        // Organic curved rose petal silhouette
         ctx.beginPath();
         ctx.moveTo(0, s * 0.85); // Stem base
         ctx.bezierCurveTo(-s * 0.75, s * 0.45, -s * 0.85, -s * 0.35, -s * 0.35, -s * 0.85);
@@ -147,29 +158,30 @@ export function RosePetalsOverlay() {
         ctx.bezierCurveTo(s * 0.85, -s * 0.35, s * 0.75, s * 0.45, 0, s * 0.85);
         ctx.closePath();
 
-        // Shading: Radial soft gradient with glowing center and deeper rose edge
+        // Radial shading with luminous creamy center and velvet pink/rose edges
         const grad = ctx.createRadialGradient(
           -s * 0.12,
           -s * 0.25,
-          s * 0.08,
+          s * 0.05,
           0,
           0,
           s * 0.95
         );
         grad.addColorStop(0, col.inner);
         grad.addColorStop(0.35, col.mid);
-        grad.addColorStop(0.85, col.outer);
-        grad.addColorStop(1, col.shadow);
+        grad.addColorStop(0.8, col.outer);
+        grad.addColorStop(1, col.edge);
 
         ctx.fillStyle = grad;
         ctx.fill();
 
-        // Delicate spine / vein highlight
+        // Soft delicate petal vein highlight
+        ctx.shadowColor = 'transparent';
         ctx.beginPath();
         ctx.moveTo(0, s * 0.75);
         ctx.quadraticCurveTo(-s * 0.05, 0, 0, -s * 0.65);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-        ctx.lineWidth = 0.75;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.lineWidth = 0.8;
         ctx.stroke();
 
         ctx.restore();
@@ -181,7 +193,7 @@ export function RosePetalsOverlay() {
     animationFrameId = requestAnimationFrame(render);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
@@ -189,7 +201,8 @@ export function RosePetalsOverlay() {
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none fixed inset-0 z-25 w-full h-full select-none"
+      className="pointer-events-none fixed inset-0 w-full h-full select-none"
+      style={{ zIndex: 25 }}
       aria-hidden="true"
     />
   );
