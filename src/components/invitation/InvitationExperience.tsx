@@ -151,7 +151,7 @@ export function InvitationExperience({
               <svg className="w-3.5 h-3.5 text-amber-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
-              <span>Scroll up / down to read all 3 pages</span>
+              <span>Scroll to read • Drag left / right to tilt 3D</span>
             </>
           ) : (
             <span>Swipe to rotate • Pinch to zoom</span>

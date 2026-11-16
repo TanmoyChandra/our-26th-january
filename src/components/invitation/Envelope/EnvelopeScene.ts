@@ -38,12 +38,18 @@ export class EnvelopeScene {
   private entranceGiggleDone = false;
   private startTime = performance.now();
 
-  // 3D vertical scrolling state when card is unfolded into 3 pages
+  // 3D vertical scrolling and interactive horizontal tilt state when card is unfolded into 3 pages
   private targetScrollY = 0;
   private currentScrollY = 0;
+  private targetTiltY = 0;
+  private currentTiltY = 0;
+  private targetTiltZ = 0;
+  private currentTiltZ = 0;
+  private touchStartX = 0;
   private touchStartY = 0;
   private touchStartScrollY = 0;
   private isTouchScrolling = false;
+  private pointerStartX = 0;
   private pointerStartY = 0;
   private pointerStartScrollY = 0;
   private isPointerScrolling = false;
@@ -504,6 +510,7 @@ export class EnvelopeScene {
 
   private onTouchStart = (e: TouchEvent): void => {
     if (!this.isUnfolded || this.unfoldTimeline || e.touches.length === 0) return;
+    this.touchStartX = e.touches[0].clientX;
     this.touchStartY = e.touches[0].clientY;
     this.touchStartScrollY = this.targetScrollY;
     this.isTouchScrolling = true;
@@ -512,20 +519,29 @@ export class EnvelopeScene {
   private onTouchMove = (e: TouchEvent): void => {
     if (!this.isTouchScrolling || !this.isUnfolded || e.touches.length === 0) return;
     if (e.cancelable) e.preventDefault();
+    const deltaX = e.touches[0].clientX - this.touchStartX;
     const deltaY = e.touches[0].clientY - this.touchStartY;
     const visibleHeightIn3D = 2 * Math.tan((this.camera.fov * Math.PI) / 360) * this.camera.position.z;
     const sensitivity = (visibleHeightIn3D / window.innerHeight) * 1.0;
     const rawTarget = this.touchStartScrollY - deltaY * sensitivity;
     this.targetScrollY = Math.max(-0.35, Math.min(6.35, rawTarget));
+
+    // Subtle 3D tilt on horizontal drag (max ~7.5 degrees) to show realistic physical depth
+    const tiltSensitivity = (Math.PI / 180) * (14.0 / Math.max(300, window.innerWidth));
+    this.targetTiltY = Math.max(-0.13, Math.min(0.13, deltaX * tiltSensitivity));
+    this.targetTiltZ = Math.max(-0.02, Math.min(0.02, -deltaX * tiltSensitivity * 0.15));
   };
 
   private onTouchEnd = (): void => {
     this.isTouchScrolling = false;
     this.targetScrollY = Math.max(0, Math.min(6.0, this.targetScrollY));
+    this.targetTiltY = 0.0;
+    this.targetTiltZ = 0.0;
   };
 
   private onPointerDown = (e: PointerEvent): void => {
     if (!this.isUnfolded || this.unfoldTimeline || e.button !== 0) return;
+    this.pointerStartX = e.clientX;
     this.pointerStartY = e.clientY;
     this.pointerStartScrollY = this.targetScrollY;
     this.isPointerScrolling = true;
@@ -533,16 +549,24 @@ export class EnvelopeScene {
 
   private onPointerMove = (e: PointerEvent): void => {
     if (!this.isPointerScrolling || !this.isUnfolded) return;
+    const deltaX = e.clientX - this.pointerStartX;
     const deltaY = e.clientY - this.pointerStartY;
     const visibleHeightIn3D = 2 * Math.tan((this.camera.fov * Math.PI) / 360) * this.camera.position.z;
     const sensitivity = (visibleHeightIn3D / window.innerHeight) * 1.0;
     const rawTarget = this.pointerStartScrollY - deltaY * sensitivity;
     this.targetScrollY = Math.max(-0.35, Math.min(6.35, rawTarget));
+
+    // Subtle 3D tilt on horizontal drag (max ~7.5 degrees) to show realistic physical depth
+    const tiltSensitivity = (Math.PI / 180) * (14.0 / Math.max(300, window.innerWidth));
+    this.targetTiltY = Math.max(-0.13, Math.min(0.13, deltaX * tiltSensitivity));
+    this.targetTiltZ = Math.max(-0.02, Math.min(0.02, -deltaX * tiltSensitivity * 0.15));
   };
 
   private onPointerUp = (): void => {
     this.isPointerScrolling = false;
     this.targetScrollY = Math.max(0, Math.min(6.0, this.targetScrollY));
+    this.targetTiltY = 0.0;
+    this.targetTiltZ = 0.0;
   };
 
   public getScrollProgress(): number {
@@ -592,6 +616,10 @@ export class EnvelopeScene {
 
       this.targetScrollY = 0.0;
       this.currentScrollY = 0.0;
+      this.targetTiltY = 0.0;
+      this.currentTiltY = 0.0;
+      this.targetTiltZ = 0.0;
+      this.currentTiltZ = 0.0;
 
       const tl = gsap.timeline({
         onComplete: () => {
@@ -706,6 +734,10 @@ export class EnvelopeScene {
       // 2. FOLD BACK INTO NESTLED ENVELOPE:
       this.targetScrollY = 0;
       this.currentScrollY = 0;
+      this.targetTiltY = 0;
+      this.currentTiltY = 0;
+      this.targetTiltZ = 0;
+      this.currentTiltZ = 0;
 
       const targetZ = this.calculateCameraDistance(width, height);
 
@@ -919,14 +951,21 @@ export class EnvelopeScene {
       this.controls.update();
     }
 
-    // 3D vertical scrolling when card is unfolded into 3 pages:
-    // Glides smoothly without any 3D rotation, allowing the user to read all 3 pages
+    // 3D vertical scrolling & subtle interactive 3D tilt when card is unfolded into 3 pages:
     if (this.isUnfolded && !this.unfoldTimeline) {
       if (!this.isTouchScrolling && !this.isPointerScrolling) {
         this.targetScrollY = Math.max(0, Math.min(6.0, this.targetScrollY));
+        this.targetTiltY = 0;
+        this.targetTiltZ = 0;
       }
       this.currentScrollY += (this.targetScrollY - this.currentScrollY) * 0.12;
       this.modelParts.cardGroup.position.y = this.currentScrollY;
+
+      // Smooth damping / spring-back for subtle 3D tilt on horizontal drag
+      this.currentTiltY += (this.targetTiltY - this.currentTiltY) * 0.10;
+      this.currentTiltZ += (this.targetTiltZ - this.currentTiltZ) * 0.10;
+      this.modelParts.cardGroup.rotation.y = this.currentTiltY;
+      this.modelParts.cardGroup.rotation.z = this.currentTiltZ;
     }
 
     // Gentle ambient floating wobble / giggle when idle and closed,
