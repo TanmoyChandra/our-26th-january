@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { m, AnimatePresence } from 'framer-motion';
 import { VENUE_MAPS_CONFIG } from '@/config/invitation';
+import { RosePetalsOverlay } from './RosePetalsOverlay';
 import type { EventDetails, GuestInfo, InvitationConfig } from '@/types/invitation';
 import type { Envelope3DRef } from './Envelope3D';
 
@@ -95,6 +96,9 @@ export function InvitationExperience({
           />
         </div>
       </section>
+
+      {/* 3b. Romantic Falling Pink Rose Petals Overlay */}
+      <RosePetalsOverlay />
 
       {/* 4. Bottom Floating Action Controls */}
       <footer className="absolute bottom-8 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4">
