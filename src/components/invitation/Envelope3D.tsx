@@ -41,6 +41,20 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
   ) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const sceneRef = useRef<EnvelopeScene | null>(null);
+    const onReadyRef = useRef(onReady);
+    onReadyRef.current = onReady;
+
+    // Keep latest callbacks in ref so scene callbacks never trigger re-instantiation
+    const callbacksRef = useRef({
+      onAnimationChange,
+      onUnfoldChange,
+      onScrollChange,
+    });
+    callbacksRef.current = {
+      onAnimationChange,
+      onUnfoldChange,
+      onScrollChange,
+    };
 
     useImperativeHandle(
       ref,
@@ -76,6 +90,7 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
       []
     );
 
+    // Initialize 3D Scene once on mount
     useEffect(() => {
       const container = containerRef.current;
       if (!container) return;
@@ -85,26 +100,33 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
         guestName,
         category,
         interactiveRotation: true,
-        onAnimationChange,
-        onUnfoldChange,
-        onScrollChange,
+        onAnimationChange: (animating) => {
+          callbacksRef.current.onAnimationChange?.(animating);
+        },
+        onUnfoldChange: (unfolded) => {
+          callbacksRef.current.onUnfoldChange?.(unfolded);
+        },
+        onScrollChange: (progress, page) => {
+          callbacksRef.current.onScrollChange?.(progress, page);
+        },
       });
       sceneRef.current = scene;
 
-      onReady?.();
+      onReadyRef.current?.();
 
       return () => {
         scene.dispose();
         sceneRef.current = null;
       };
-    }, [
-      guestName,
-      category,
-      onReady,
-      onAnimationChange,
-      onUnfoldChange,
-      onScrollChange,
-    ]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Dynamically update guest name and category without re-creating scene
+    useEffect(() => {
+      if (sceneRef.current) {
+        sceneRef.current.updateGuest(guestName, category);
+      }
+    }, [guestName, category]);
 
     return (
       <div

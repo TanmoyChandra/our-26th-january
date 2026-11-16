@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { m, AnimatePresence } from 'framer-motion';
 import { VENUE_MAPS_CONFIG } from '@/config/invitation';
@@ -44,7 +44,7 @@ export function InvitationExperience({
   const [isAnimating, setIsAnimating] = useState(false);
   const [scrollPage, setScrollPage] = useState(1);
 
-  const handleToggle = () => {
+  const handleToggle = useCallback(() => {
     if (isAnimating) return; // Prevent any interaction while animation is playing
 
     // 1. Immediately start playing background music on user's open gesture
@@ -62,9 +62,9 @@ export function InvitationExperience({
       const state = envelope3DRef.current.toggleOpen();
       setIsOpen(state);
     }
-  };
+  }, [isAnimating, isOpen, isUnfolded]);
 
-  const handleToggleUnfold = () => {
+  const handleToggleUnfold = useCallback(() => {
     if (isAnimating) return; // Prevent any interaction while animation is playing
     if (envelope3DRef.current) {
       const state = envelope3DRef.current.toggleUnfold();
@@ -75,25 +75,25 @@ export function InvitationExperience({
         setScrollPage(1);
       }
     }
-  };
+  }, [isAnimating]);
 
-  const handleUnfoldChange = (unfolded: boolean) => {
+  const handleUnfoldChange = useCallback((unfolded: boolean) => {
     setIsUnfolded(unfolded);
     if (unfolded) {
       audioPlayerRef.current?.play();
     } else {
       setScrollPage(1);
     }
-  };
+  }, []);
 
-  const handleScrollChange = (_progress: number, page: number) => {
+  const handleScrollChange = useCallback((_progress: number, page: number) => {
     setScrollPage(page);
-  };
+  }, []);
 
-  const handleScrollNext = () => {
+  const handleScrollNext = useCallback(() => {
     if (isAnimating) return;
     envelope3DRef.current?.scrollNext();
-  };
+  }, [isAnimating]);
 
   return (
     <main className="fixed inset-0 w-full h-[100dvh] overflow-hidden bg-[#0c0a09] select-none">
