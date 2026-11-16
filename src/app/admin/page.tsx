@@ -114,7 +114,8 @@ export default function AdminLinkGeneratorPage() {
     // Joint combined name
     const combinedName = combineDisplayNames(cleanNames);
     const slug = formatSlug(combinedName);
-    const url = `${host}/${encodeURIComponent(slug)}?type=${category}`;
+    const typeCode = category === 'family' ? 'f' : 'g';
+    const url = `${host}/${encodeURIComponent(slug)}?type=${typeCode}`;
 
     const newLink: GeneratedLinkItem = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,

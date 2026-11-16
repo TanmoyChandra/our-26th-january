@@ -27,7 +27,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       >
         <span className="text-neutral-400">Preview:</span>
         <Link
-          href="/?type=family"
+          href="/?type=f"
           className={`px-2.5 py-1 rounded-full transition-colors ${
             guestInfo.category === 'family'
               ? 'bg-neutral-900 text-white font-semibold'
@@ -37,7 +37,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           Family
         </Link>
         <Link
-          href="/?type=general"
+          href="/?type=g"
           className={`px-2.5 py-1 rounded-full transition-colors ${
             guestInfo.category === 'general'
               ? 'bg-neutral-900 text-white font-semibold'

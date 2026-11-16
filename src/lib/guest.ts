@@ -25,11 +25,15 @@ export function toDisplayName(raw: string): string {
 
 /**
  * Parse and validate the category query param.
- * Falls back to 'general' on missing or invalid input.
+ * Accepts 'f' or 'family' for family tier.
+ * Accepts 'g' or 'general' (or falls back to) for general tier.
  */
 export function parseCategory(raw: string | null | undefined): InvitationCategory {
-  if (raw && VALID_CATEGORIES.includes(raw as InvitationCategory)) {
-    return raw as InvitationCategory;
+  if (raw === 'family' || raw === 'f') {
+    return 'family';
+  }
+  if (raw === 'general' || raw === 'g') {
+    return 'general';
   }
   return 'general';
 }

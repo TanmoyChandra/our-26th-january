@@ -23,8 +23,14 @@ describe('parseCategory', () => {
   it('returns family for "family"', () => {
     expect(parseCategory('family')).toBe('family');
   });
+  it('returns family for single letter "f"', () => {
+    expect(parseCategory('f')).toBe('family');
+  });
   it('returns general for "general"', () => {
     expect(parseCategory('general')).toBe('general');
+  });
+  it('returns general for single letter "g"', () => {
+    expect(parseCategory('g')).toBe('general');
   });
   it('defaults to general for null', () => {
     expect(parseCategory(null)).toBe('general');
