@@ -149,19 +149,7 @@ export function InvitationExperience({
           )}
         </div>
 
-        {/* Rotate / Scroll Helper Hint */}
-        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/40 border border-amber-500/30 backdrop-blur-md text-[10px] font-mono tracking-widest uppercase text-amber-300/90 shadow-lg">
-          {isUnfolded ? (
-            <>
-              <svg className="w-3.5 h-3.5 text-amber-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-              <span>Scroll to read • Drag left / right to tilt 3D</span>
-            </>
-          ) : (
-            <span>Swipe to rotate • Pinch to zoom</span>
-          )}
-        </div>
+
       </footer>
 
       {/* 5. Google Maps Venue Location Shortcut (Bottom Right when unfolded) */}
