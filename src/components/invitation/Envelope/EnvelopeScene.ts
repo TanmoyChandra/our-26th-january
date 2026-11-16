@@ -497,48 +497,68 @@ export class EnvelopeScene {
       });
       this.unfoldTimeline = tl;
 
-      // Card glides up so the full 3-fold card (height 9.0, center at y = -3.0 in cardGroup)
-      // is perfectly centered at world y = 0.0 (3.0 - 3.0 = 0.0)
-      tl.to(this.modelParts.cardGroup.position, {
-        x: 0,
-        y: 3.0,
-        z: 0.35,
-        duration: 0.85,
-        ease: 'power2.inOut',
-      }, 0);
-
-      // Envelope lowers slightly to give full focus to the 3-fold card
-      tl.to(this.modelParts.root.position, {
-        y: -3.8,
-        duration: 0.85,
-        ease: 'power2.inOut',
-      }, 0);
-
-      // Camera glides to frame the 3-fold card at full width
+      // Phase 1: Camera glides to frame the 3-fold card at full width
       tl.to(this.camera.position, {
         x: 0,
         y: 0,
         z: targetUnfoldZ,
-        duration: 0.85,
+        duration: 1.35,
         ease: 'power2.inOut',
         onUpdate: () => {
           this.camera.lookAt(0, 0, 0);
         },
       }, 0);
 
-      // Step 2: Middle fold cascades downward from below Top Panel (rotation.x from Math.PI to 0)
-      tl.to(this.modelParts.middlePanelHinge.rotation, {
-        x: 0,
-        duration: 0.9,
-        ease: 'power2.out',
-      }, '+=0.05');
+      // Phase 2: Envelope lowers smoothly into the lower background
+      tl.to(this.modelParts.root.position, {
+        y: -3.8,
+        duration: 1.20,
+        ease: 'power2.inOut',
+      }, 0);
 
-      // Step 3: Bottom fold cascades downward from below Middle Panel (rotation.x from -Math.PI to 0)
+      // Phase 3: Card position with organic gravity arc:
+      // Lifts up into free air, has a subtle downward gravity dip as the heavy folds swing down,
+      // and settles softly into the exact center of the screen (y = 3.0 places card center at y = 0.0)
+      tl.to(this.modelParts.cardGroup.position, {
+        keyframes: [
+          { y: 3.12, z: 0.44, duration: 0.55, ease: 'power2.out' },
+          { y: 2.96, z: 0.38, duration: 0.45, ease: 'sine.inOut' },
+          { y: 3.00, z: 0.35, duration: 0.35, ease: 'sine.out' },
+        ],
+      }, 0);
+
+      // Phase 4: Organic 3D air resistance and subtle paper tilt / flutter
+      tl.to(this.modelParts.cardGroup.rotation, {
+        keyframes: [
+          { x: -0.045, y: -0.035, z: 0.028, duration: 0.45, ease: 'sine.out' },
+          { x: 0.015, y: 0.020, z: -0.014, duration: 0.45, ease: 'sine.inOut' },
+          { x: 0.0, y: 0.0, z: 0.0, duration: 0.45, ease: 'sine.out' },
+        ],
+      }, 0);
+
+      // Phase 5: Middle panel drops downward under gravity, swinging through flat
+      // with authentic momentum overshoot towards the viewer, followed by a damped elastic settle
+      tl.to(this.modelParts.middlePanelHinge.rotation, {
+        keyframes: [
+          { x: Math.PI * 0.65, z: 0.016, duration: 0.35, ease: 'power1.in' },
+          { x: -0.095, z: -0.008, duration: 0.45, ease: 'power2.out' },
+          { x: 0.025, z: 0.003, duration: 0.30, ease: 'sine.inOut' },
+          { x: 0.0, z: 0.0, duration: 0.25, ease: 'sine.out' },
+        ],
+      }, 0.05);
+
+      // Phase 6: Bottom panel cascading whip & unfurl:
+      // Trails behind initially due to inertia & drag, then as the middle panel opens,
+      // centrifugal force whips the bottom panel downwards with momentum, overshooting and settling
       tl.to(this.modelParts.bottomPanelHinge.rotation, {
-        x: 0,
-        duration: 0.9,
-        ease: 'power2.out',
-      }, '-=0.65');
+        keyframes: [
+          { x: -Math.PI * 0.92, z: -0.015, duration: 0.25, ease: 'power1.in' },
+          { x: -Math.PI * 0.35, z: 0.022, duration: 0.35, ease: 'power2.in' },
+          { x: 0.120, z: -0.012, duration: 0.40, ease: 'power2.out' },
+          { x: -0.035, z: 0.004, duration: 0.25, ease: 'sine.inOut' },
+          { x: 0.0, z: 0.0, duration: 0.20, ease: 'sine.out' },
+        ],
+      }, 0.12);
     } else {
       // 2. FOLD BACK INTO NESTLED ENVELOPE:
       if (this.controls) this.controls.enabled = false;
@@ -557,36 +577,47 @@ export class EnvelopeScene {
       });
       this.unfoldTimeline = tl;
 
-      // Step 1: Panels fold back (bottom panel first, then middle panel)
+      // Step 1: Bottom panel flips up first with natural paper snap
       tl.to(this.modelParts.bottomPanelHinge.rotation, {
-        x: -Math.PI,
-        duration: 0.75,
-        ease: 'power2.inOut',
+        keyframes: [
+          { x: -Math.PI * 0.40, z: 0.015, duration: 0.32, ease: 'power1.in' },
+          { x: -Math.PI * 1.04, z: -0.005, duration: 0.30, ease: 'power2.out' },
+          { x: -Math.PI, z: 0.0, duration: 0.15, ease: 'sine.inOut' },
+        ],
       }, 0);
 
+      // Step 2: Middle panel folds up behind top panel with slight overlap
       tl.to(this.modelParts.middlePanelHinge.rotation, {
-        x: Math.PI,
-        duration: 0.75,
-        ease: 'power2.inOut',
-      }, '+=0.05');
+        keyframes: [
+          { x: Math.PI * 0.45, z: -0.015, duration: 0.35, ease: 'power1.in' },
+          { x: Math.PI * 1.03, z: 0.005, duration: 0.32, ease: 'power2.out' },
+          { x: Math.PI, z: 0.0, duration: 0.15, ease: 'sine.inOut' },
+        ],
+      }, 0.18);
 
-      // Step 2: Card glides back into envelope pocket
+      // Step 3: Card glides smoothly back into envelope pocket
       tl.to(this.modelParts.cardGroup.position, {
-        x: 0,
-        y: 0.88,
-        z: 0.010,
-        duration: 0.85,
-        ease: 'power2.inOut',
-      }, '+=0.08');
+        keyframes: [
+          { y: 3.05, z: 0.32, duration: 0.25, ease: 'sine.out' },
+          { y: 0.88, z: 0.010, duration: 0.75, ease: 'power2.inOut' },
+        ],
+      }, 0.40);
 
-      // Envelope moves back to center
+      tl.to(this.modelParts.cardGroup.rotation, {
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: 0.75,
+        ease: 'power2.out',
+      }, 0.35);
+
+      // Step 4: Envelope moves back to center & camera returns
       tl.to(this.modelParts.root.position, {
         y: 0,
         duration: 0.85,
         ease: 'power2.inOut',
-      }, '<');
+      }, 0.35);
 
-      // Camera returns to standard envelope distance
       tl.to(this.camera.position, {
         x: 0,
         y: 0,
@@ -596,7 +627,7 @@ export class EnvelopeScene {
         onUpdate: () => {
           this.camera.lookAt(0, 0, 0);
         },
-      }, '<');
+      }, 0.35);
     }
 
     return this.isUnfolded;
