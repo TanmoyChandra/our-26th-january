@@ -11,13 +11,13 @@ export function toDisplayName(raw: string): string {
 
   return decoded
     .split(/[\s_-]+/)
-    .map((w, idx) => {
+    .map((w) => {
       const lower = w.toLowerCase();
       // Keep "&" or lowercase "and" if desired, or capitalize cleanly
       if (lower === '&' || lower === 'and') {
         return '&';
       }
-      return w.charAt(0).toUpperCase() + w.slice(1);
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
     })
     .join(' ')
     .trim();

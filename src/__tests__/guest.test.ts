@@ -17,6 +17,15 @@ describe('toDisplayName', () => {
   it('trims whitespace', () => {
     expect(toDisplayName('  rahul  ')).toBe('Rahul');
   });
+  it('converts lowercase slug to Proper Case', () => {
+    expect(toDisplayName('tanmoy-chandra')).toBe('Tanmoy Chandra');
+  });
+  it('converts lowercase joint slug to Proper Case with ampersand', () => {
+    expect(toDisplayName('tanmoy-chandra-&-parnasha-sen')).toBe('Tanmoy Chandra & Parnasha Sen');
+  });
+  it('converts all-caps slug to Proper Case', () => {
+    expect(toDisplayName('TANMOY-CHANDRA')).toBe('Tanmoy Chandra');
+  });
 });
 
 describe('parseCategory', () => {

@@ -82,10 +82,11 @@ export default function AdminLinkGeneratorPage() {
     });
   };
 
-  // Helper to slugify a name for URL
+  // Helper to slugify a name for URL (all lowercase)
   const formatSlug = (rawName: string): string => {
     return rawName
       .trim()
+      .toLowerCase()
       .replace(/\s+and\s+/gi, '-&-')
       .replace(/\s*&\s*/g, '-&-')
       .replace(/\s+/g, '-');
