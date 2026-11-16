@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { VENUE_MAPS_CONFIG } from '@/config/invitation';
 import type { EventDetails, GuestInfo, InvitationConfig } from '@/types/invitation';
 import type { Envelope3DRef } from './Envelope3D';
@@ -164,7 +164,7 @@ export function InvitationExperience({
       {/* 5. Google Maps Venue Location Shortcut (Bottom Right when unfolded) */}
       <AnimatePresence>
         {isUnfolded && (
-          <motion.aside
+          <m.aside
             initial={{ opacity: 0, scale: 0.8, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 16 }}
@@ -208,7 +208,7 @@ export function InvitationExperience({
                 Venue Location
               </span>
             </a>
-          </motion.aside>
+          </m.aside>
         )}
       </AnimatePresence>
     </main>
