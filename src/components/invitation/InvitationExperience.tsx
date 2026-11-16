@@ -68,12 +68,16 @@ export function InvitationExperience({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/50 pointer-events-none" />
       </div>
 
-      {/* 2. Top-Left Floral Corner Ornament (Positioned behind the 3D envelope layer) */}
+      {/* 2. Top-Left Floral Corner Ornament (Rendered with vintage ambient warmth behind 3D envelope) */}
       <div className="fixed top-0 left-0 z-[2] pointer-events-none select-none">
         <img
           src="/images/floral_top_left.png"
           alt=""
           className="w-36 sm:w-48 md:w-60 lg:w-72 max-w-[45vw] h-auto object-contain object-left-top drop-shadow-lg"
+          style={{
+            filter: 'sepia(24%) brightness(88%) contrast(96%) saturate(88%)',
+            opacity: 0.88,
+          }}
         />
       </div>
 
