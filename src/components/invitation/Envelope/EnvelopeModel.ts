@@ -419,7 +419,7 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   const middleGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
   middleGeo.translate(0, -cardH / 2, 0); // pivots along its top edge
 
-  const middlePanelMesh = new THREE.Mesh(middleGeo, materials.cardPaper);
+  const middlePanelMesh = new THREE.Mesh(middleGeo, materials.cardPage2Paper);
   middlePanelMesh.name = 'MiddlePanelFrontMesh';
   middlePanelMesh.position.set(0, 0, halfCardT);
   middlePanelMesh.renderOrder = 3;

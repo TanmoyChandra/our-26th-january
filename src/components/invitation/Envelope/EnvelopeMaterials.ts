@@ -8,6 +8,7 @@ export interface EnvelopeMaterialsMap {
   flapArt: THREE.MeshStandardMaterial;
   paperInterior: THREE.MeshStandardMaterial;
   cardPaper: THREE.MeshStandardMaterial;
+  cardPage2Paper: THREE.MeshStandardMaterial;
   cardBackPaper: THREE.MeshStandardMaterial;
   nameSurface: THREE.MeshStandardMaterial;
 }
@@ -19,7 +20,7 @@ export function createEnvelopeMaterials(
   flapTexture?: THREE.Texture | null,
   cardTexture?: THREE.Texture | null,
   cardBackTexture?: THREE.Texture | null,
-  frontBumpTexture?: THREE.Texture | null
+  cardPage2Texture?: THREE.Texture | null
 ): EnvelopeMaterialsMap {
   const { materials } = ENVELOPE_CONFIG;
   const baseColor = new THREE.Color(materials.paperColor);
@@ -36,16 +37,14 @@ export function createEnvelopeMaterials(
     depthWrite: true,
   });
 
-  // Plain side front face with custom artwork texture and tactile 3D height / bump map
+  // Plain side front face with custom artwork texture
   const paperFrontArt = new THREE.MeshStandardMaterial({
     map: frontTexture || null,
-    bumpMap: frontBumpTexture || null,
-    bumpScale: 0.055, // Tactile embossed relief for couple artwork and lotus ornaments
     color: frontTexture ? 0xffffff : baseColor,
     transparent: true,
-    alphaTest: 0.05,
-    roughness: 0.65,
-    metalness: 0.08,
+    alphaTest: 0.1,
+    roughness: 0.78,
+    metalness: 0.05,
     side: THREE.FrontSide,
     depthWrite: true,
   });
@@ -83,10 +82,22 @@ export function createEnvelopeMaterials(
     depthWrite: true,
   });
 
-  // Invitation card emerging from inside with custom Engagement Ceremony artwork
+  // Invitation card emerging from inside with custom Engagement Ceremony artwork (Page 1)
   const cardPaper = new THREE.MeshStandardMaterial({
     map: cardTexture || null,
     color: cardTexture ? 0xffffff : new THREE.Color('#faf6ee'),
+    transparent: true,
+    alphaTest: 0.1,
+    roughness: 0.72,
+    metalness: 0.05,
+    side: THREE.DoubleSide,
+    depthWrite: true,
+  });
+
+  // Second page (Middle Panel) of the unfolded card
+  const cardPage2Paper = new THREE.MeshStandardMaterial({
+    map: cardPage2Texture || cardTexture || null,
+    color: (cardPage2Texture || cardTexture) ? 0xffffff : new THREE.Color('#faf6ee'),
     transparent: true,
     alphaTest: 0.1,
     roughness: 0.72,
@@ -126,6 +137,7 @@ export function createEnvelopeMaterials(
     flapArt,
     paperInterior,
     cardPaper,
+    cardPage2Paper,
     cardBackPaper,
     nameSurface,
   };

@@ -28,11 +28,11 @@ export interface EnvelopeConfig {
     innerColor: string;
     shadowEdgeColor: string;
     frontTexturePath: string;
-    frontBumpPath: string;
     backTexturePath: string;
     flapTexturePath: string;
     pocketTexturePath: string;
     cardTexturePath: string;
+    cardPage2TexturePath: string;
     cardBackTexturePath: string;
   };
   guestName: {
@@ -86,11 +86,11 @@ export const ENVELOPE_CONFIG: EnvelopeConfig = {
     innerColor: '#e1d2b0', // Warm cream interior lining
     shadowEdgeColor: '#d3bb90',
     frontTexturePath: '/textures/envelope/envelope_front.png',
-    frontBumpPath: '/textures/envelope/envelope_front_bump.png',
     backTexturePath: '/textures/envelope/envelope_back.png',
     flapTexturePath: '/textures/envelope/flap.png',
     pocketTexturePath: '/textures/envelope/pocket.png',
     cardTexturePath: '/textures/envelope/card_engagement.png',
+    cardPage2TexturePath: '/textures/envelope/card_page_2.jpg',
     cardBackTexturePath: '/textures/envelope/card_back.png',
   },
   guestName: {
