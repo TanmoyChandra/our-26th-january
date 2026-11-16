@@ -5,7 +5,6 @@ import React from 'react';
 interface LuxuryActionButtonProps {
   onClick: () => void;
   label: string;
-  chevronDirection?: 'right' | 'left';
   className?: string;
   disabled?: boolean;
 }
@@ -19,12 +18,11 @@ interface LuxuryActionButtonProps {
  * - Ornate royal ogee / diamond cartouche tips on the horizontal apexes
  * - Luminous specular lens flares / star shimmers on the top and bottom center edges
  * - Delicate inset golden hairline stroke
- * - Embossed metallic champagne gold serif typography and matching chevron
+ * - Embossed metallic champagne gold serif typography (prominent, clear, without chevrons)
  */
 export function LuxuryActionButton({
   onClick,
   label,
-  chevronDirection = 'right',
   className = '',
   disabled = false,
 }: LuxuryActionButtonProps) {
@@ -102,30 +100,30 @@ export function LuxuryActionButton({
           </svg>
         </div>
 
-        {/* Top Center Specular Lens Flare / Star Shimmer */}
+        {/* Top Center Specular Lens Flare / Soft Shimmer Beam */}
         <div
           aria-hidden="true"
           className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-20"
         >
           {/* Horizontal flare line */}
-          <div className="w-16 sm:w-24 h-[2px] bg-gradient-to-r from-transparent via-[#fffde6] to-transparent shadow-[0_0_8px_#ffffff,0_0_16px_#f59e0b]" />
-          {/* Center glowing diamond spark */}
-          <div className="absolute w-2 h-2 bg-white rotate-45 shadow-[0_0_6px_#ffffff,0_0_12px_#f59e0b] blur-[0.2px]" />
+          <div className="w-16 sm:w-24 h-[1.5px] bg-gradient-to-r from-transparent via-[#fffde6] to-transparent shadow-[0_0_6px_#ffffff,0_0_14px_#f59e0b]" />
+          {/* Soft luminous center spark */}
+          <div className="absolute w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_#ffffff,0_0_12px_#f59e0b] blur-[0.2px]" />
         </div>
 
-        {/* Bottom Center Specular Lens Flare / Star Shimmer */}
+        {/* Bottom Center Specular Lens Flare / Soft Shimmer Beam */}
         <div
           aria-hidden="true"
           className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 flex items-center justify-center pointer-events-none z-20"
         >
           {/* Horizontal flare line */}
-          <div className="w-20 sm:w-28 h-[2px] bg-gradient-to-r from-transparent via-[#fff6c2] to-transparent shadow-[0_0_8px_#ffffff,0_0_16px_#f59e0b]" />
-          {/* Center glowing diamond spark */}
-          <div className="absolute w-2 h-2 bg-white rotate-45 shadow-[0_0_6px_#ffffff,0_0_12px_#f59e0b] blur-[0.2px]" />
+          <div className="w-16 sm:w-24 h-[1.5px] bg-gradient-to-r from-transparent via-[#fff6c2] to-transparent shadow-[0_0_6px_#ffffff,0_0_14px_#f59e0b]" />
+          {/* Soft luminous center spark */}
+          <div className="absolute w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_#ffffff,0_0_12px_#f59e0b] blur-[0.2px]" />
         </div>
 
         {/* Inner velvet crimson fill container */}
-        <div className="relative w-full rounded-full px-5 sm:px-7 py-2 sm:py-2.5 min-w-[130px] sm:min-w-[155px] bg-[radial-gradient(ellipse_at_center,_#6c1117_0%,_#4d080f_55%,_#2a0306_100%)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),inset_0_-2px_4px_rgba(0,0,0,0.8)] overflow-hidden">
+        <div className="relative w-full rounded-full px-6 sm:px-8 py-2.5 sm:py-3 min-w-[135px] sm:min-w-[165px] bg-[radial-gradient(ellipse_at_center,_#6c1117_0%,_#4d080f_55%,_#2a0306_100%)] shadow-[inset_0_2px_4px_rgba(0,0,0,0.6),inset_0_-2px_4px_rgba(0,0,0,0.8)] overflow-hidden">
           {/* Delicate inset golden hairline stroke */}
           <div
             aria-hidden="true"
@@ -138,37 +136,11 @@ export function LuxuryActionButton({
             className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/12 via-white/5 to-transparent rounded-t-full pointer-events-none"
           />
 
-          {/* Button Content: Golden Serif Text + Chevron */}
-          <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-2.5">
-            {chevronDirection === 'left' && (
-              <svg
-                aria-hidden="true"
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-200/90 transition-transform duration-300 group-hover:-translate-x-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.8"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            )}
-
-            <span className="font-serif font-medium text-xs sm:text-sm tracking-[0.22em] uppercase select-none text-transparent bg-clip-text bg-gradient-to-b from-[#fff6d6] via-[#f7df94] to-[#d4a03e] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_0_8px_rgba(245,158,11,0.45)]">
+          {/* Button Content: Larger Golden Serif Text (Clean, no arrow) */}
+          <div className="relative z-10 flex items-center justify-center px-1">
+            <span className="font-serif font-medium text-sm sm:text-base md:text-[17px] tracking-[0.22em] uppercase select-none text-transparent bg-clip-text bg-gradient-to-b from-[#fff6d6] via-[#f7df94] to-[#d4a03e] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]">
               {label}
             </span>
-
-            {chevronDirection === 'right' && (
-              <svg
-                aria-hidden="true"
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-200/90 transition-transform duration-300 group-hover:translate-x-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.8"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            )}
           </div>
         </div>
       </div>

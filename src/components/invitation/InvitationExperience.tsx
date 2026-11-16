@@ -110,7 +110,7 @@ export function InvitationExperience({
 
       {/* 4. Bottom Floating Action Controls (Fades out smoothly during 3D animations and locks interaction) */}
       <footer
-        className={`fixed bottom-6 sm:bottom-8 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] transition-all duration-400 ease-in-out ${
+        className={`fixed bottom-12 sm:bottom-16 left-0 right-0 z-30 flex flex-col items-center justify-center gap-3 text-center px-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] transition-all duration-400 ease-in-out ${
           isAnimating
             ? 'opacity-0 pointer-events-none translate-y-3'
             : 'opacity-100 pointer-events-auto translate-y-0'
@@ -122,8 +122,7 @@ export function InvitationExperience({
             <LuxuryActionButton
               onClick={handleToggle}
               label={isOpen ? 'CLOSE' : 'OPEN'}
-              chevronDirection={isOpen ? 'left' : 'right'}
-              className={!isOpen ? 'min-w-[155px] sm:min-w-[190px]' : ''}
+              className={!isOpen ? 'min-w-[160px] sm:min-w-[200px]' : ''}
             />
           )}
 
@@ -132,8 +131,7 @@ export function InvitationExperience({
             <LuxuryActionButton
               onClick={handleToggleUnfold}
               label={isUnfolded ? 'FOLD' : 'READ'}
-              chevronDirection={isUnfolded ? 'left' : 'right'}
-              className={isUnfolded ? 'min-w-[155px] sm:min-w-[190px]' : ''}
+              className={isUnfolded ? 'min-w-[160px] sm:min-w-[200px]' : ''}
             />
           )}
         </div>
@@ -149,7 +147,7 @@ export function InvitationExperience({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.7, y: 16 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="fixed bottom-6 right-5 sm:right-7 z-40 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]"
+            className="fixed bottom-12 sm:bottom-16 right-5 sm:right-7 z-40 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
             aria-label="Venue Google Maps link"
           >
             <a
