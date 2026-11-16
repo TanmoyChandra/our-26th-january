@@ -127,21 +127,29 @@ export function InvitationExperience({
             </button>
           )}
 
-          {/* READ FULL / FOLD CARD button */}
+          {/* READ / FOLD BUTTON (Identical modern luxury aesthetic with parallel fading lines) */}
           {isOpen && (
             <button
               onClick={handleToggleUnfold}
-              className="group relative inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-amber-400/70 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-stone-950 font-serif tracking-widest uppercase text-xs font-semibold shadow-xl shadow-amber-950/60 backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 hover:brightness-110"
-              aria-label={isUnfolded ? 'Fold Card' : 'Read Full'}
+              className="group relative inline-flex flex-col items-center justify-center py-2 px-6 bg-transparent border-none cursor-pointer select-none transition-transform duration-300 hover:scale-105 active:scale-95 focus:outline-none"
+              aria-label={isUnfolded ? 'Fold' : 'Read'}
             >
-              <svg className="w-3.5 h-3.5 text-stone-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isUnfolded ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                )}
-              </svg>
-              <span>{isUnfolded ? 'Fold Card' : 'Read Full'}</span>
+              {/* Top parallel line blending with background gradually */}
+              <span
+                aria-hidden="true"
+                className="w-36 sm:w-48 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.5)] transition-all duration-500 group-hover:via-amber-300 group-hover:w-48 sm:group-hover:w-56"
+              />
+
+              {/* Modern animated shining golden "READ" / "FOLD" text */}
+              <span className="my-2 text-base sm:text-lg font-normal tracking-[0.42em] uppercase animate-text-shine select-none drop-shadow-[0_0_14px_rgba(234,179,8,0.6)] drop-shadow-[0_0_2px_rgba(254,240,138,0.8)]">
+                {isUnfolded ? 'Fold' : 'Read'}
+              </span>
+
+              {/* Bottom parallel line blending with background gradually */}
+              <span
+                aria-hidden="true"
+                className="w-36 sm:w-48 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_rgba(251,191,36,0.5)] transition-all duration-500 group-hover:via-amber-300 group-hover:w-48 sm:group-hover:w-56"
+              />
             </button>
           )}
         </div>
