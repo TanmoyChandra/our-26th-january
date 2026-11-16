@@ -246,8 +246,8 @@ export class EnvelopeScene {
     }
     if (!this.isOpen && this.isUnfolded) {
       this.isUnfolded = false;
-      this.modelParts.topPanelHinge.rotation.x = -Math.PI;
-      this.modelParts.bottomPanelHinge.rotation.x = Math.PI;
+      this.modelParts.middlePanelHinge.rotation.x = Math.PI;
+      this.modelParts.bottomPanelHinge.rotation.x = -Math.PI;
       this.modelParts.root.position.y = 0;
     }
     this.entranceGiggleDone = true;
@@ -390,13 +390,33 @@ export class EnvelopeScene {
       });
       this.openTimeline = tl;
 
-      // Step 1: Paper slides all the way back down into the envelope first
+      // Step 1: If card was unfolded, fold panels back immediately
+      if (this.isUnfolded) {
+        this.isUnfolded = false;
+        tl.to(this.modelParts.bottomPanelHinge.rotation, {
+          x: -Math.PI,
+          duration: 0.4,
+          ease: 'power2.inOut',
+        }, 0);
+        tl.to(this.modelParts.middlePanelHinge.rotation, {
+          x: Math.PI,
+          duration: 0.4,
+          ease: 'power2.inOut',
+        }, 0);
+        tl.to(this.modelParts.root.position, {
+          y: 0,
+          duration: 0.4,
+          ease: 'power2.inOut',
+        }, 0);
+      }
+
+      // Step 2: Paper slides all the way back down into the envelope
       tl.to(this.modelParts.cardGroup.position, {
         y: 0,
         z: 0.005,
         duration: 0.75,
         ease: 'power2.inOut',
-      }, 0);
+      }, this.isUnfolded ? '+=0.1' : 0);
 
       tl.to(this.modelParts.cardGroup.rotation, {
         x: 0,
@@ -477,10 +497,11 @@ export class EnvelopeScene {
       });
       this.unfoldTimeline = tl;
 
-      // Card glides up to dead center of viewport
+      // Card glides up so the full 3-fold card (height 9.0, center at y = -3.0 in cardGroup)
+      // is perfectly centered at world y = 0.0 (3.0 - 3.0 = 0.0)
       tl.to(this.modelParts.cardGroup.position, {
         x: 0,
-        y: 0,
+        y: 3.0,
         z: 0.35,
         duration: 0.85,
         ease: 'power2.inOut',
@@ -488,7 +509,7 @@ export class EnvelopeScene {
 
       // Envelope lowers slightly to give full focus to the 3-fold card
       tl.to(this.modelParts.root.position, {
-        y: -3.0,
+        y: -3.8,
         duration: 0.85,
         ease: 'power2.inOut',
       }, 0);
@@ -505,14 +526,14 @@ export class EnvelopeScene {
         },
       }, 0);
 
-      // Step 2: Top fold lifts and unfolds upward (rotation.x from -Math.PI to 0)
-      tl.to(this.modelParts.topPanelHinge.rotation, {
+      // Step 2: Middle fold cascades downward from below Top Panel (rotation.x from Math.PI to 0)
+      tl.to(this.modelParts.middlePanelHinge.rotation, {
         x: 0,
         duration: 0.9,
         ease: 'power2.out',
       }, '+=0.05');
 
-      // Step 3: Bottom fold drops and unfolds downward (rotation.x from Math.PI to 0)
+      // Step 3: Bottom fold cascades downward from below Middle Panel (rotation.x from -Math.PI to 0)
       tl.to(this.modelParts.bottomPanelHinge.rotation, {
         x: 0,
         duration: 0.9,
@@ -536,15 +557,15 @@ export class EnvelopeScene {
       });
       this.unfoldTimeline = tl;
 
-      // Step 1: Panels fold back
+      // Step 1: Panels fold back (bottom panel first, then middle panel)
       tl.to(this.modelParts.bottomPanelHinge.rotation, {
-        x: Math.PI,
+        x: -Math.PI,
         duration: 0.75,
         ease: 'power2.inOut',
       }, 0);
 
-      tl.to(this.modelParts.topPanelHinge.rotation, {
-        x: -Math.PI,
+      tl.to(this.modelParts.middlePanelHinge.rotation, {
+        x: Math.PI,
         duration: 0.75,
         ease: 'power2.inOut',
       }, '+=0.05');

@@ -10,8 +10,8 @@ export interface EnvelopeModelParts {
   cardMesh: THREE.Mesh;
   cardBackMesh: THREE.Mesh;
   cardRimMesh: THREE.Mesh;
-  topPanelHinge: THREE.Group;
-  topPanelMesh: THREE.Mesh;
+  middlePanelHinge: THREE.Group;
+  middlePanelMesh: THREE.Mesh;
   bottomPanelHinge: THREE.Group;
   bottomPanelMesh: THREE.Mesh;
   backPocketMesh: THREE.Mesh;
@@ -361,6 +361,10 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   topFlapHinge.add(topFlapEdgeMesh);
 
   // 4. INNER INVITATION CARD: 3-fold stationery card with Engagement Ceremony artwork
+  // Panel 1 (Top Panel) is the initial card emerging from the envelope pocket.
+  // Panel 2 (Middle Panel) hinges from the bottom edge of Panel 1.
+  // Panel 3 (Bottom Panel) hinges from the bottom edge of Panel 2.
+  // When unfolding ("Read Full"), both panels unfold strictly downwards from below Panel 1 (nothing unfolds upwards).
   const cardGroup = new THREE.Group();
   cardGroup.name = 'InnerCardGroup';
   cardGroup.position.set(0, 0, 0.005);
@@ -372,19 +376,16 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   const cardThickness = 0.008;
   const halfCardT = cardThickness / 2;
 
-  // 4a. MIDDLE PANEL (Center fold of 3-fold card)
-  const middleGroup = new THREE.Group();
-  middleGroup.name = 'MiddlePanelGroup';
-  cardGroup.add(middleGroup);
-
-  const middleGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
-  const cardMesh = new THREE.Mesh(middleGeo, materials.cardPaper);
+  // 4a. TOP PANEL (The initial card emerging from the envelope, base of the 3-fold)
+  // Centered at (0, 0, 0) inside cardGroup
+  const topGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
+  const cardMesh = new THREE.Mesh(topGeo, materials.cardPaper);
   cardMesh.name = 'InnerCardMesh';
   cardMesh.position.set(0, 0, halfCardT);
   cardMesh.renderOrder = 3;
   cardMesh.castShadow = true;
   cardMesh.receiveShadow = true;
-  middleGroup.add(cardMesh);
+  cardGroup.add(cardMesh);
 
   const cardBackGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
   const cardBackMesh = new THREE.Mesh(cardBackGeo, materials.cardBackPaper);
@@ -394,7 +395,7 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   cardBackMesh.renderOrder = 3;
   cardBackMesh.castShadow = true;
   cardBackMesh.receiveShadow = true;
-  middleGroup.add(cardBackMesh);
+  cardGroup.add(cardBackMesh);
 
   const cardRimGeo = createCardRimGeometry(cardW, cardH, cardThickness, cardRadius);
   const cardRimMesh = new THREE.Mesh(cardRimGeo, materials.cardBackPaper);
@@ -402,54 +403,54 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   cardRimMesh.renderOrder = 3;
   cardRimMesh.castShadow = true;
   cardRimMesh.receiveShadow = true;
-  middleGroup.add(cardRimMesh);
+  cardGroup.add(cardRimMesh);
 
-  // 4b. TOP PANEL (Hinges along top edge of Middle Panel at y = +cardH / 2)
-  const topPanelHinge = new THREE.Group();
-  topPanelHinge.name = 'TopPanelHinge';
-  topPanelHinge.position.set(0, cardH / 2, -halfCardT);
-  cardGroup.add(topPanelHinge);
+  // 4b. MIDDLE PANEL (Hinges along bottom edge of Top Panel at y = -cardH / 2)
+  const middlePanelHinge = new THREE.Group();
+  middlePanelHinge.name = 'MiddlePanelHinge';
+  middlePanelHinge.position.set(0, -cardH / 2, -cardThickness);
+  cardGroup.add(middlePanelHinge);
 
-  const topGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
-  topGeo.translate(0, cardH / 2, 0); // pivots along bottom edge
+  const middleGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
+  middleGeo.translate(0, -cardH / 2, 0); // pivots along its top edge
 
-  const topPanelMesh = new THREE.Mesh(topGeo, materials.cardPaper);
-  topPanelMesh.name = 'TopPanelFrontMesh';
-  topPanelMesh.position.set(0, 0, halfCardT);
-  topPanelMesh.renderOrder = 3;
-  topPanelMesh.castShadow = true;
-  topPanelMesh.receiveShadow = true;
-  topPanelHinge.add(topPanelMesh);
+  const middlePanelMesh = new THREE.Mesh(middleGeo, materials.cardPaper);
+  middlePanelMesh.name = 'MiddlePanelFrontMesh';
+  middlePanelMesh.position.set(0, 0, halfCardT);
+  middlePanelMesh.renderOrder = 3;
+  middlePanelMesh.castShadow = true;
+  middlePanelMesh.receiveShadow = true;
+  middlePanelHinge.add(middlePanelMesh);
 
-  const topPanelBackMesh = new THREE.Mesh(topGeo, materials.cardBackPaper);
-  topPanelBackMesh.name = 'TopPanelBackMesh';
-  topPanelBackMesh.position.set(0, 0, -halfCardT);
-  topPanelBackMesh.rotation.y = Math.PI;
-  topPanelBackMesh.renderOrder = 3;
-  topPanelBackMesh.castShadow = true;
-  topPanelBackMesh.receiveShadow = true;
-  topPanelHinge.add(topPanelBackMesh);
+  const middlePanelBackMesh = new THREE.Mesh(middleGeo, materials.cardBackPaper);
+  middlePanelBackMesh.name = 'MiddlePanelBackMesh';
+  middlePanelBackMesh.position.set(0, 0, -halfCardT);
+  middlePanelBackMesh.rotation.y = Math.PI;
+  middlePanelBackMesh.renderOrder = 3;
+  middlePanelBackMesh.castShadow = true;
+  middlePanelBackMesh.receiveShadow = true;
+  middlePanelHinge.add(middlePanelBackMesh);
 
-  const topRimGeo = createCardRimGeometry(cardW, cardH, cardThickness, cardRadius);
-  topRimGeo.translate(0, cardH / 2, 0);
-  const topRimMesh = new THREE.Mesh(topRimGeo, materials.cardBackPaper);
-  topRimMesh.name = 'TopPanelRimMesh';
-  topRimMesh.renderOrder = 3;
-  topRimMesh.castShadow = true;
-  topRimMesh.receiveShadow = true;
-  topPanelHinge.add(topRimMesh);
+  const middleRimGeo = createCardRimGeometry(cardW, cardH, cardThickness, cardRadius);
+  middleRimGeo.translate(0, -cardH / 2, 0);
+  const middleRimMesh = new THREE.Mesh(middleRimGeo, materials.cardBackPaper);
+  middleRimMesh.name = 'MiddlePanelRimMesh';
+  middleRimMesh.renderOrder = 3;
+  middleRimMesh.castShadow = true;
+  middleRimMesh.receiveShadow = true;
+  middlePanelHinge.add(middleRimMesh);
 
-  // Initially FOLDED backwards behind Middle Panel
-  topPanelHinge.rotation.x = -Math.PI;
+  // In folded state, Middle Panel folds upwards behind Top Panel
+  middlePanelHinge.rotation.x = Math.PI;
 
-  // 4c. BOTTOM PANEL (Hinges along bottom edge of Middle Panel at y = -cardH / 2)
+  // 4c. BOTTOM PANEL (Hinges along bottom edge of Middle Panel at y = -cardH)
   const bottomPanelHinge = new THREE.Group();
   bottomPanelHinge.name = 'BottomPanelHinge';
-  bottomPanelHinge.position.set(0, -cardH / 2, -halfCardT * 2);
-  cardGroup.add(bottomPanelHinge);
+  bottomPanelHinge.position.set(0, -cardH, -cardThickness);
+  middlePanelHinge.add(bottomPanelHinge);
 
   const bottomGeo = createRoundedPlaneGeometry(cardW, cardH, cardRadius);
-  bottomGeo.translate(0, -cardH / 2, 0); // pivots along top edge
+  bottomGeo.translate(0, -cardH / 2, 0); // pivots along its top edge
 
   const bottomPanelMesh = new THREE.Mesh(bottomGeo, materials.cardPaper);
   bottomPanelMesh.name = 'BottomPanelFrontMesh';
@@ -477,8 +478,8 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
   bottomRimMesh.receiveShadow = true;
   bottomPanelHinge.add(bottomRimMesh);
 
-  // Initially FOLDED backwards behind Middle Panel
-  bottomPanelHinge.rotation.x = Math.PI;
+  // In folded state, Bottom Panel folds flat against Middle Panel
+  bottomPanelHinge.rotation.x = -Math.PI;
 
   // 5. BACK POCKET: The lower/side flaps textured with the back image, subtle rounded corners
   const pocketGeo = createRoundedPlaneGeometry(width, height, cornerRadius);
@@ -501,8 +502,8 @@ export function createEnvelopeModel(materials: EnvelopeMaterialsMap): EnvelopeMo
     cardMesh,
     cardBackMesh,
     cardRimMesh,
-    topPanelHinge,
-    topPanelMesh,
+    middlePanelHinge,
+    middlePanelMesh,
     bottomPanelHinge,
     bottomPanelMesh,
     backPocketMesh,
