@@ -68,8 +68,8 @@ export function InvitationExperience({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/50 pointer-events-none" />
       </div>
 
-      {/* 2. Top-Left Floral Corner Ornament */}
-      <div className="fixed top-0 left-0 z-20 pointer-events-none select-none">
+      {/* 2. Top-Left Floral Corner Ornament (Positioned behind the 3D envelope layer) */}
+      <div className="fixed top-0 left-0 z-[2] pointer-events-none select-none">
         <img
           src="/images/floral_top_left.png"
           alt=""
