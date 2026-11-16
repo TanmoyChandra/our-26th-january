@@ -1,6 +1,19 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
+
+export interface BackgroundAudioPlayerRef {
+  play: () => void;
+  pause: () => void;
+  toggle: () => void;
+  readonly isPlaying: boolean;
+}
 
 interface BackgroundAudioPlayerProps {
   src?: string;
@@ -10,16 +23,58 @@ interface BackgroundAudioPlayerProps {
 /**
  * BackgroundAudioPlayer
  *
- * Automatically begins playing background music on the first user interaction
- * (any touch, tap, or click anywhere on the screen), respecting browser autoplay policies.
- * Includes a discreet, matching golden floating sound toggle button in the top-right corner.
+ * Plays background music when toggled by the user or triggered by opening the envelope.
+ * Includes a royal golden floating sound toggle button in the top-right corner.
  */
-export function BackgroundAudioPlayer({
-  src = '/audio/satranga-short.mp3',
-  volume = 0.8,
-}: BackgroundAudioPlayerProps) {
+export const BackgroundAudioPlayer = forwardRef<
+  BackgroundAudioPlayerRef,
+  BackgroundAudioPlayerProps
+>(function BackgroundAudioPlayer(
+  {
+    src = '/audio/satranga-short.mp3',
+    volume = 0.8,
+  }: BackgroundAudioPlayerProps,
+  ref
+) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      play: () => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        audio
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch((err) => console.warn('Could not start audio playback:', err));
+      },
+      pause: () => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        audio.pause();
+        setIsPlaying(false);
+      },
+      toggle: () => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        if (isPlaying) {
+          audio.pause();
+          setIsPlaying(false);
+        } else {
+          audio
+            .play()
+            .then(() => setIsPlaying(true))
+            .catch((err) => console.warn('Could not start audio playback:', err));
+        }
+      },
+      get isPlaying() {
+        return isPlaying;
+      },
+    }),
+    [isPlaying]
+  );
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -214,4 +269,4 @@ export function BackgroundAudioPlayer({
       </aside>
     </>
   );
-}
+});

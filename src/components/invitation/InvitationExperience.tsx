@@ -6,7 +6,10 @@ import { m, AnimatePresence } from 'framer-motion';
 import { VENUE_MAPS_CONFIG } from '@/config/invitation';
 import { RosePetalsOverlay } from './RosePetalsOverlay';
 import { LuxuryActionButton } from './LuxuryActionButton';
-import { BackgroundAudioPlayer } from './BackgroundAudioPlayer';
+import {
+  BackgroundAudioPlayer,
+  type BackgroundAudioPlayerRef,
+} from './BackgroundAudioPlayer';
 import type { EventDetails, GuestInfo, InvitationConfig } from '@/types/invitation';
 import type { Envelope3DRef } from './Envelope3D';
 
@@ -35,6 +38,7 @@ export function InvitationExperience({
   guestInfo,
 }: InvitationExperienceProps) {
   const envelope3DRef = useRef<Envelope3DRef | null>(null);
+  const audioPlayerRef = useRef<BackgroundAudioPlayerRef | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isUnfolded, setIsUnfolded] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -46,8 +50,14 @@ export function InvitationExperience({
         envelope3DRef.current.toggleUnfold();
         setIsUnfolded(false);
       }
+      const willOpen = !isOpen;
       const state = envelope3DRef.current.toggleOpen();
       setIsOpen(state);
+
+      // Start playing background music when opening the envelope
+      if (willOpen) {
+        audioPlayerRef.current?.play();
+      }
     }
   };
 
@@ -110,8 +120,11 @@ export function InvitationExperience({
       {/* 3b. Romantic Falling Pink Rose Petals Overlay */}
       <RosePetalsOverlay />
 
-      {/* 3c. Atmospheric Background Music Player (Starts on any user touch/interaction) */}
-      <BackgroundAudioPlayer src="/audio/satranga-short.mp3" />
+      {/* 3c. Atmospheric Background Music Player */}
+      <BackgroundAudioPlayer
+        ref={audioPlayerRef}
+        src="/audio/satranga-short.mp3"
+      />
 
       {/* 4. Bottom Floating Action Controls (Fades out smoothly during 3D animations and locks interaction) */}
       <footer
