@@ -478,6 +478,59 @@ export class EnvelopeScene {
           this.setCardRenderOrder(3);
         },
       }, '<');
+
+      // Step 3: THEN AND ONLY THEN (after closing is 100% complete and sealed),
+      // smoothly rotate the envelope back to the front face (personalized guest name & couple artwork)!
+      const spherical = new THREE.Spherical().setFromVector3(this.camera.position);
+      const deltaTheta = Math.atan2(Math.sin(0 - spherical.theta), Math.cos(0 - spherical.theta));
+      const endTheta = spherical.theta + deltaTheta;
+
+      const deltaRootY = Math.atan2(Math.sin(Math.PI - this.modelParts.root.rotation.y), Math.cos(Math.PI - this.modelParts.root.rotation.y));
+      const endRootY = this.modelParts.root.rotation.y + deltaRootY;
+
+      const closeAnimState = {
+        radius: spherical.radius,
+        phi: spherical.phi,
+        theta: spherical.theta,
+        rotX: this.modelParts.root.rotation.x,
+        rotY: this.modelParts.root.rotation.y,
+        rotZ: this.modelParts.root.rotation.z,
+        posX: this.modelParts.root.position.x,
+        posY: this.modelParts.root.position.y,
+        posZ: this.modelParts.root.position.z,
+      };
+
+      tl.to(closeAnimState, {
+        radius: targetZ,
+        phi: Math.PI / 2,
+        theta: endTheta,
+        rotX: 0,
+        rotY: endRootY,
+        rotZ: 0,
+        posX: 0,
+        posY: 0,
+        posZ: 0,
+        duration: 0.85,
+        ease: 'power2.inOut',
+        onUpdate: () => {
+          const tempSpherical = new THREE.Spherical(closeAnimState.radius, closeAnimState.phi, closeAnimState.theta);
+          tempSpherical.makeSafe();
+          this.camera.position.setFromSpherical(tempSpherical);
+          this.camera.lookAt(0, 0, 0);
+          this.modelParts.root.rotation.set(closeAnimState.rotX, closeAnimState.rotY, closeAnimState.rotZ);
+          this.modelParts.root.position.set(closeAnimState.posX, closeAnimState.posY, closeAnimState.posZ);
+        },
+        onComplete: () => {
+          this.modelParts.root.rotation.set(0, Math.PI, 0);
+          this.modelParts.root.position.set(0, 0, 0);
+          this.camera.position.set(0, 0, targetZ);
+          this.camera.lookAt(0, 0, 0);
+          if (this.controls) {
+            this.controls.target.set(0, 0, 0);
+            this.controls.update();
+          }
+        },
+      }, '+=0.08');
     }
 
     return this.isOpen;
