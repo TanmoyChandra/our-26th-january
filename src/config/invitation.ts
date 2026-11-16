@@ -38,9 +38,7 @@ export const INVITATION_CONFIG: InvitationConfig = {
 };
 
 export const VENUE_MAPS_CONFIG = {
-  venueName: 'ITC Royal Bengal',
-  address: 'ITC Royal Bengal, 1, JBS Haldane Ave, Tangra, Kolkata, West Bengal 700046',
-  get googleMapsUrl(): string {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(this.address)}`;
-  },
+  venueName: 'Atithi Inn',
+  address: 'Atithi Inn, Kolkata',
+  googleMapsUrl: 'https://maps.app.goo.gl/8F2Cs3GL8AmYpQpYA',
 };
