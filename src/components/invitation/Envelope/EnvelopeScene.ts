@@ -611,8 +611,8 @@ export class EnvelopeScene {
       // PHASE 1: Card pulls UP completely out of the envelope pocket first!
       // (Shows the user clearly that the card has emerged fully before unfolding)
       tl.to(this.modelParts.cardGroup.position, {
-        y: 2.35,
-        duration: 0.45,
+        y: 3.35,
+        duration: 0.50,
         ease: 'power2.out',
       }, 0);
 
@@ -635,7 +635,7 @@ export class EnvelopeScene {
 
       // As the card clears the pocket rim, shift Z forward and elevate renderOrder
       tl.to(this.modelParts.cardGroup.position, {
-        z: 0.35,
+        z: 0.45,
         duration: 0.25,
         ease: 'power2.out',
       }, 0.25);
@@ -643,35 +643,35 @@ export class EnvelopeScene {
       tl.add(() => {
         // Entire card is now 100% in front of envelope and pocket: renderOrder = 6
         this.setCardRenderOrder(6);
-      }, 0.35);
+      }, 0.30);
 
       // PHASE 2: Envelope moves down into background
       tl.to(this.modelParts.envelopeGroup.position, {
         y: -5.0,
-        duration: 0.90,
+        duration: 0.95,
         ease: 'power2.inOut',
-      }, 0.40);
+      }, 0.35);
 
       // Camera glides to frame reading distance looking at (0, 0, 0)
       tl.to(this.camera.position, {
         x: 0,
         y: 0,
         z: targetUnfoldZ,
-        duration: 1.10,
+        duration: 1.15,
         ease: 'power2.inOut',
         onUpdate: () => {
           this.camera.lookAt(0, 0, 0);
         },
-      }, 0.35);
+      }, 0.30);
 
       // PHASE 3: Card glides down to center (y = 0.00) while unfolding downwards
       tl.to(this.modelParts.cardGroup.position, {
         keyframes: [
-          { y: 1.20, z: 0.38, duration: 0.35, ease: 'sine.inOut' },
-          { y: -0.06, z: 0.36, duration: 0.35, ease: 'sine.inOut' },
+          { y: 1.60, z: 0.45, duration: 0.35, ease: 'sine.inOut' },
+          { y: -0.06, z: 0.38, duration: 0.35, ease: 'sine.inOut' },
           { y: 0.00, z: 0.35, duration: 0.25, ease: 'power2.out' },
         ],
-      }, 0.45);
+      }, 0.50);
 
       // Organic paper tilt flutter settling completely flat
       tl.to(this.modelParts.cardGroup.rotation, {
@@ -680,7 +680,7 @@ export class EnvelopeScene {
           { x: 0.015, y: 0.020, z: -0.014, duration: 0.40, ease: 'sine.inOut' },
           { x: 0.0, y: 0.0, z: 0.0, duration: 0.30, ease: 'sine.out' },
         ],
-      }, 0.45);
+      }, 0.50);
 
       // PHASE 4: Middle panel drops downward under gravity, swinging through flat
       tl.to(this.modelParts.middlePanelHinge.rotation, {
@@ -690,7 +690,7 @@ export class EnvelopeScene {
           { x: 0.025, z: 0.003, duration: 0.25, ease: 'sine.inOut' },
           { x: 0.0, z: 0.0, duration: 0.20, ease: 'sine.out' },
         ],
-      }, 0.50);
+      }, 0.52);
 
       // Bottom panel cascading whip & unfurl
       tl.to(this.modelParts.bottomPanelHinge.rotation, {
@@ -701,7 +701,7 @@ export class EnvelopeScene {
           { x: -0.035, z: 0.004, duration: 0.22, ease: 'sine.inOut' },
           { x: 0.0, z: 0.0, duration: 0.18, ease: 'sine.out' },
         ],
-      }, 0.60);
+      }, 0.62);
     } else {
       // 2. FOLD BACK INTO NESTLED ENVELOPE:
       this.targetScrollY = 0;
@@ -725,9 +725,9 @@ export class EnvelopeScene {
 
       // PHASE 1: Card folds up while rising to hover above the envelope opening
       tl.to(this.modelParts.cardGroup.position, {
-        y: 2.35,
-        z: 0.35,
-        duration: 0.45,
+        y: 3.35,
+        z: 0.45,
+        duration: 0.50,
         ease: 'power2.out',
       }, 0);
 
@@ -735,7 +735,7 @@ export class EnvelopeScene {
         x: 0,
         y: 0,
         z: 0,
-        duration: 0.45,
+        duration: 0.50,
         ease: 'power2.out',
       }, 0);
 
@@ -789,19 +789,19 @@ export class EnvelopeScene {
         z: 0.010,
         duration: 0.20,
         ease: 'sine.inOut',
-      }, 0.45);
+      }, 0.50);
 
       tl.add(() => {
         // Entering pocket: switch back to renderOrder 4 so backPocketMesh (5) occludes lower portion
         this.setCardRenderOrder(4);
-      }, 0.50);
+      }, 0.58);
 
       // Slides smoothly down inside the pocket to nestled position (y = 0.88)
       tl.to(this.modelParts.cardGroup.position, {
         y: 0.88,
         duration: 0.65,
         ease: 'power2.inOut',
-      }, 0.45);
+      }, 0.50);
 
       tl.to(this.camera.position, {
         x: 0,
