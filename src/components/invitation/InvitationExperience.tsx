@@ -127,11 +127,15 @@ export function InvitationExperience({
             </button>
           )}
 
-          {/* READ / FOLD BUTTON (Identical modern luxury aesthetic with parallel fading lines) */}
+          {/* READ / FOLD BUTTON (Identical modern luxury aesthetic; black background when FOLD is active) */}
           {isOpen && (
             <button
               onClick={handleToggleUnfold}
-              className="group relative inline-flex flex-col items-center justify-center py-2 px-6 bg-transparent border-none cursor-pointer select-none transition-transform duration-300 hover:scale-105 active:scale-95 focus:outline-none"
+              className={`group relative inline-flex flex-col items-center justify-center cursor-pointer select-none transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none ${
+                isUnfolded
+                  ? 'bg-black/90 backdrop-blur-md rounded-2xl py-2 px-7 border border-amber-500/30 shadow-2xl shadow-black/80'
+                  : 'bg-transparent border-none py-2 px-6'
+              }`}
               aria-label={isUnfolded ? 'Fold' : 'Read'}
             >
               {/* Top parallel line blending with background gradually */}
