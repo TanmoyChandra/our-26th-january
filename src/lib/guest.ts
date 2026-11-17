@@ -63,7 +63,7 @@ export function decryptGuestToken(
     const result = decoder.decode(bytes);
 
     // 1. Format with embedded category and language: 'f:b:name', 'g:e:name', etc.
-    const matchWithLang = /^([fg]):([be]|bn|en):(.+)$/i.exec(result);
+    const matchWithLang = /^([fg]):([be]|bn|en):([\s\S]+)$/i.exec(result);
     if (matchWithLang) {
       const catCode = matchWithLang[1].toLowerCase();
       const langCode = matchWithLang[2].toLowerCase();
@@ -76,7 +76,7 @@ export function decryptGuestToken(
     }
 
     // 2. Legacy format with category prefix only: 'f:name' or 'g:name'
-    const matchWithCat = /^([fg]):(.+)$/i.exec(result);
+    const matchWithCat = /^([fg]):([\s\S]+)$/i.exec(result);
     if (matchWithCat) {
       const catCode = matchWithCat[1].toLowerCase();
       const name = matchWithCat[2];
@@ -87,8 +87,8 @@ export function decryptGuestToken(
       };
     }
 
-    // 3. Legacy token without category or language prefix
-    if (/^[a-zA-Z0-9\s_&.,'’\-]+$/.test(result)) {
+    // 3. Legacy token without category or language prefix (supports English & Unicode/Bengali characters)
+    if (result && !result.includes('\0')) {
       return {
         name: result,
         category: defaultCategory,

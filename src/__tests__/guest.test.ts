@@ -203,6 +203,17 @@ describe('encryptGuestName and decryptGuestName', () => {
     expect(guest.language).toBe('bn');
   });
 
+  it('round-trips Bengali script in guest name with category and language', () => {
+    const original = 'তন্ময়-চন্দ্র-ও-পর্ণাশা-সেন';
+    const cipher = encryptGuestName(original, 'family', 'bn');
+    const token = decryptGuestToken(cipher);
+    expect(token.name).toBe(original);
+    expect(token.category).toBe('family');
+    expect(token.language).toBe('bn');
+    const guest = buildGuestInfo(cipher, null);
+    expect(guest.displayName).toBe('তন্ময় চন্দ্র ও পর্ণাশা সেন');
+  });
+
   it('allows query param to override language when testing', () => {
     const guest = buildGuestInfo('tanmoy-chandra', 'f', 'bn');
     expect(guest.language).toBe('bn');

@@ -17,8 +17,8 @@ export default async function GuestPage({ params, searchParams }: GuestPageProps
   const { type, lang, language } = await searchParams;
   const langParam = lang || language;
 
-  // Validate guest slug — reject empty or obviously invalid slugs
-  if (!guest || guest.length > 100) {
+  // Validate guest slug — reject empty or excessively long slugs (max standard URL length 2048)
+  if (!guest || guest.trim().length === 0 || guest.length > 2048) {
     notFound();
   }
 
