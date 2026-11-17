@@ -39,6 +39,13 @@ export const BackgroundAudioPlayer = forwardRef<
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Keep a ref of isPlaying for event listeners without re-subscribing
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
+
+  // Track if music was playing right before user switched away from tab/app
+  const wasPlayingBeforeHiddenRef = useRef(false);
+
   useImperativeHandle(
     ref,
     () => ({
@@ -81,6 +88,65 @@ export const BackgroundAudioPlayer = forwardRef<
     if (!audio) return;
     audio.volume = volume;
   }, [volume]);
+
+  // Pause music when tab/browser is minimized or switched to another app,
+  // and resume automatically when the user returns to this tab.
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      if (document.hidden) {
+        // User switched tabs, minimized browser, or opened another app
+        if (isPlayingRef.current) {
+          wasPlayingBeforeHiddenRef.current = true;
+          audio.pause();
+          setIsPlaying(false);
+        }
+      } else {
+        // User returned to this tab / app
+        if (wasPlayingBeforeHiddenRef.current) {
+          wasPlayingBeforeHiddenRef.current = false;
+          audio
+            .play()
+            .then(() => setIsPlaying(true))
+            .catch((err) => console.warn('Could not resume audio on visibility return:', err));
+        }
+      }
+    };
+
+    const handlePageHide = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      if (isPlayingRef.current) {
+        wasPlayingBeforeHiddenRef.current = true;
+        audio.pause();
+        setIsPlaying(false);
+      }
+    };
+
+    const handlePageShow = (e: PageTransitionEvent) => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      if (wasPlayingBeforeHiddenRef.current || (e.persisted && isPlayingRef.current)) {
+        wasPlayingBeforeHiddenRef.current = false;
+        audio
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch((err) => console.warn('Could not resume audio on page show:', err));
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('pageshow', handlePageShow);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, []);
 
   // Clean up audio on unmount
   useEffect(() => {
