@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { toDisplayName, parseCategory, buildGuestInfo } from '@/lib/guest';
+import {
+  toDisplayName,
+  parseCategory,
+  buildGuestInfo,
+  encryptGuestName,
+  decryptGuestName,
+} from '@/lib/guest';
 
 describe('toDisplayName', () => {
   it('capitalises a simple name', () => {
@@ -77,5 +83,39 @@ describe('buildGuestInfo', () => {
     const guest = buildGuestInfo('priya%20kumari', 'general');
     expect(guest.name).toBe('priya kumari');
     expect(guest.displayName).toBe('Priya Kumari');
+  });
+  it('decrypts ciphertext slug into Proper Case display name', () => {
+    const cipher = encryptGuestName('tanmoy-chandra');
+    const guest = buildGuestInfo(cipher, 'f');
+    expect(guest.name).toBe('tanmoy-chandra');
+    expect(guest.displayName).toBe('Tanmoy Chandra');
+    expect(guest.category).toBe('family');
+  });
+  it('decrypts joint ciphertext slug into Proper Case joint names', () => {
+    const cipher = encryptGuestName('tanmoy-chandra-&-parnasha-sen');
+    const guest = buildGuestInfo(cipher, 'g');
+    expect(guest.displayName).toBe('Tanmoy Chandra & Parnasha Sen');
+    expect(guest.category).toBe('general');
+  });
+});
+
+describe('encryptGuestName and decryptGuestName', () => {
+  it('round-trips simple names', () => {
+    const original = 'rahul-sharma';
+    const cipher = encryptGuestName(original);
+    expect(cipher).not.toBe(original);
+    expect(/^[0-9a-f]+$/.test(cipher)).toBe(true);
+    expect(decryptGuestName(cipher)).toBe(original);
+  });
+
+  it('round-trips joint names with ampersands', () => {
+    const original = 'amit-&-sneha';
+    const cipher = encryptGuestName(original);
+    expect(cipher).not.toBe(original);
+    expect(decryptGuestName(cipher)).toBe(original);
+  });
+
+  it('falls back gracefully on plaintext input', () => {
+    expect(decryptGuestName('plain-name')).toBe('plain-name');
   });
 });

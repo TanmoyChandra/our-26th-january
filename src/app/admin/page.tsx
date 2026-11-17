@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { encryptGuestName } from '@/lib/guest';
 import {
   Plus,
   Trash2,
@@ -114,9 +115,10 @@ export default function AdminLinkGeneratorPage() {
     
     // Joint combined name
     const combinedName = combineDisplayNames(cleanNames);
-    const slug = formatSlug(combinedName);
+    const rawSlug = formatSlug(combinedName);
+    const cipherSlug = encryptGuestName(rawSlug);
     const typeCode = category === 'family' ? 'f' : 'g';
-    const url = `${host}/${encodeURIComponent(slug)}?type=${typeCode}`;
+    const url = `${host}/${cipherSlug}?type=${typeCode}`;
 
     const newLink: GeneratedLinkItem = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
