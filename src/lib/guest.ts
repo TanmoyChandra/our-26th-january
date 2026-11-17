@@ -10,9 +10,93 @@ export interface DecryptedGuestToken {
 }
 
 /**
+ * Packs a UTF-8 string containing English/ASCII and Bengali characters into 1 byte per character.
+ * Bengali Unicode characters (U+0980 - U+09FF) fit into [0x81 - 0xFE].
+ * Standard ASCII (0x00 - 0x7F) stays 1 byte.
+ * Reduces Bengali character size by ~65% in raw bytes before encoding.
+ */
+function packBengali(str: string): Uint8Array {
+  const bytes: number[] = [];
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if (code <= 0x7f) {
+      bytes.push(code);
+    } else if (code >= 0x0980 && code <= 0x09ff) {
+      bytes.push(0x80 | (code - 0x0980));
+    } else if (code === 0x200c) {
+      // Zero-width non-joiner
+      bytes.push(0x80);
+    } else if (code === 0x200d) {
+      // Zero-width joiner
+      bytes.push(0xff);
+    } else {
+      // General multi-byte fallback for any other rare unicode characters
+      const encoder = new TextEncoder();
+      const u = encoder.encode(str[i]);
+      for (let j = 0; j < u.length; j++) {
+        bytes.push(u[j]);
+      }
+    }
+  }
+  return new Uint8Array(bytes);
+}
+
+/**
+ * Unpacks 1-byte packed characters back to original string.
+ */
+function unpackBengali(buf: Uint8Array): string {
+  let str = '';
+  for (let i = 0; i < buf.length; i++) {
+    const b = buf[i];
+    if (b <= 0x7f) {
+      str += String.fromCharCode(b);
+    } else if (b === 0x80) {
+      str += '\u200c';
+    } else if (b === 0xff) {
+      str += '\u200d';
+    } else if (b >= 0x81 && b <= 0xfe) {
+      str += String.fromCharCode(0x0980 + (b & 0x7f));
+    } else {
+      str += String.fromCharCode(b);
+    }
+  }
+  return str;
+}
+
+/**
+ * Converts bytes into a URL-safe Base64 string (no '+', '/', or '=').
+ */
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  const len = bytes.length;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = typeof btoa === 'function' ? btoa(binary) : Buffer.from(binary, 'binary').toString('base64');
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Converts a URL-safe Base64 string back into bytes.
+ */
+function base64UrlToBytes(str: string): Uint8Array {
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4 !== 0) {
+    base64 += '=';
+  }
+  const binary = typeof atob === 'function' ? atob(base64) : Buffer.from(base64, 'base64').toString('binary');
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
  * Encrypt a plaintext guest name or slug, category ('family' | 'general' | 'f' | 'g'),
- * and optional language ('en' | 'bn' | 'b' | 'e') into a single unified URL-safe lowercase hex ciphertext.
- * Format inside payload: `${typeCode}:${langCode}:${name}` (e.g. `f:b:tanmoy-chandra`)
+ * and optional language ('en' | 'bn' | 'b' | 'e') into a super-compact URL-safe Base64URL ciphertext token.
+ * Bengali characters are compressed to 1 byte each, reducing link size by ~70%.
+ * Format inside payload: `${typeCode}:${langCode}:${name}` (e.g. `f:b:তন্ময় চন্দ্র`)
  */
 export function encryptGuestName(
   text: string,
@@ -23,83 +107,124 @@ export function encryptGuestName(
   const typeCode = (category === 'family' || category === 'f') ? 'f' : 'g';
   const langCode = (language === 'bn' || language === 'b' || language === 'bengali') ? 'b' : 'e';
   const payload = `${typeCode}:${langCode}:${text.trim()}`;
+  
+  const packedBytes = packBengali(payload);
   const encoder = new TextEncoder();
-  const bytes = encoder.encode(payload);
   const keyBytes = encoder.encode(CIPHER_KEY);
-  let hex = '';
-  for (let i = 0; i < bytes.length; i++) {
-    const xored = (bytes[i] ^ keyBytes[i % keyBytes.length] ^ ((i * 11 + 17) & 0xff)) & 0xff;
-    hex += xored.toString(16).padStart(2, '0');
+  const encryptedBytes = new Uint8Array(packedBytes.length);
+  for (let i = 0; i < packedBytes.length; i++) {
+    encryptedBytes[i] = (packedBytes[i] ^ keyBytes[i % keyBytes.length] ^ ((i * 11 + 17) & 0xff)) & 0xff;
   }
-  return hex;
+  return bytesToBase64Url(encryptedBytes);
 }
 
 /**
- * Decrypt a hex ciphertext back into the original guest name, embedded category, and language.
- * If the input is not a valid ciphertext or decryption fails, falls back gracefully.
+ * Decrypt a token back into the original guest name, embedded category, and language.
+ * Automatically supports:
+ * 1. New compact Base64URL tokens with 1-byte packed Bengali/English.
+ * 2. Legacy hexadecimal tokens (for backward compatibility with previously shared links).
+ * 3. Plaintext fallback slugs.
  */
 export function decryptGuestToken(
-  cipherHex: string,
+  cipherToken: string,
   fallbackType?: string | null,
   fallbackLang?: string | null
 ): DecryptedGuestToken {
   const defaultCategory = parseCategory(fallbackType);
   const defaultLanguage = parseLanguage(fallbackLang);
 
-  // If not a valid hex string of even length, return raw input as fallback
-  if (!cipherHex || cipherHex.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(cipherHex)) {
-    return { name: cipherHex, category: defaultCategory, language: defaultLanguage };
+  if (!cipherToken) {
+    return { name: cipherToken, category: defaultCategory, language: defaultLanguage };
   }
 
+  const encoder = new TextEncoder();
+  const keyBytes = encoder.encode(CIPHER_KEY);
+
+  // 1. Try new compact Base64URL decryptor
   try {
-    const encoder = new TextEncoder();
-    const keyBytes = encoder.encode(CIPHER_KEY);
-    const bytes = new Uint8Array(cipherHex.length / 2);
-    for (let i = 0; i < bytes.length; i++) {
-      const byte = parseInt(cipherHex.substr(i * 2, 2), 16);
-      bytes[i] = (byte ^ keyBytes[i % keyBytes.length] ^ ((i * 11 + 17) & 0xff)) & 0xff;
-    }
-    const decoder = new TextDecoder('utf-8', { fatal: true });
-    const result = decoder.decode(bytes);
+    if (/^[A-Za-z0-9_-]+$/.test(cipherToken)) {
+      const encryptedBytes = base64UrlToBytes(cipherToken);
+      const decryptedBytes = new Uint8Array(encryptedBytes.length);
+      for (let i = 0; i < encryptedBytes.length; i++) {
+        decryptedBytes[i] = (encryptedBytes[i] ^ keyBytes[i % keyBytes.length] ^ ((i * 11 + 17) & 0xff)) & 0xff;
+      }
+      const result = unpackBengali(decryptedBytes);
 
-    // 1. Format with embedded category and language: 'f:b:name', 'g:e:name', etc.
-    const matchWithLang = /^([fg]):([be]|bn|en):([\s\S]+)$/i.exec(result);
-    if (matchWithLang) {
-      const catCode = matchWithLang[1].toLowerCase();
-      const langCode = matchWithLang[2].toLowerCase();
-      const name = matchWithLang[3];
-      return {
-        name,
-        category: catCode === 'f' ? 'family' : 'general',
-        language: (langCode === 'b' || langCode === 'bn') ? 'bn' : 'en',
-      };
-    }
+      const matchWithLang = /^([fg]):([be]|bn|en):([\s\S]+)$/i.exec(result);
+      if (matchWithLang) {
+        const catCode = matchWithLang[1].toLowerCase();
+        const langCode = matchWithLang[2].toLowerCase();
+        const name = matchWithLang[3];
+        return {
+          name,
+          category: catCode === 'f' ? 'family' : 'general',
+          language: (langCode === 'b' || langCode === 'bn') ? 'bn' : 'en',
+        };
+      }
 
-    // 2. Legacy format with category prefix only: 'f:name' or 'g:name'
-    const matchWithCat = /^([fg]):([\s\S]+)$/i.exec(result);
-    if (matchWithCat) {
-      const catCode = matchWithCat[1].toLowerCase();
-      const name = matchWithCat[2];
-      return {
-        name,
-        category: catCode === 'f' ? 'family' : 'general',
-        language: defaultLanguage,
-      };
-    }
-
-    // 3. Legacy token without category or language prefix (supports English & Unicode/Bengali characters)
-    if (result && !result.includes('\0')) {
-      return {
-        name: result,
-        category: defaultCategory,
-        language: defaultLanguage,
-      };
+      const matchWithCat = /^([fg]):([\s\S]+)$/i.exec(result);
+      if (matchWithCat) {
+        const catCode = matchWithCat[1].toLowerCase();
+        const name = matchWithCat[2];
+        return {
+          name,
+          category: catCode === 'f' ? 'family' : 'general',
+          language: defaultLanguage,
+        };
+      }
     }
   } catch {
-    // Fall back to original input on error
+    // Continue to legacy check
   }
 
-  return { name: cipherHex, category: defaultCategory, language: defaultLanguage };
+  // 2. Try legacy hex decryptor (for backward compatibility with old links)
+  if (cipherToken.length % 2 === 0 && /^[0-9a-fA-F]+$/.test(cipherToken)) {
+    try {
+      const bytes = new Uint8Array(cipherToken.length / 2);
+      for (let i = 0; i < bytes.length; i++) {
+        const byte = parseInt(cipherToken.substr(i * 2, 2), 16);
+        bytes[i] = (byte ^ keyBytes[i % keyBytes.length] ^ ((i * 11 + 17) & 0xff)) & 0xff;
+      }
+      const decoder = new TextDecoder('utf-8', { fatal: true });
+      const result = decoder.decode(bytes);
+
+      const matchWithLang = /^([fg]):([be]|bn|en):([\s\S]+)$/i.exec(result);
+      if (matchWithLang) {
+        const catCode = matchWithLang[1].toLowerCase();
+        const langCode = matchWithLang[2].toLowerCase();
+        const name = matchWithLang[3];
+        return {
+          name,
+          category: catCode === 'f' ? 'family' : 'general',
+          language: (langCode === 'b' || langCode === 'bn') ? 'bn' : 'en',
+        };
+      }
+
+      const matchWithCat = /^([fg]):([\s\S]+)$/i.exec(result);
+      if (matchWithCat) {
+        const catCode = matchWithCat[1].toLowerCase();
+        const name = matchWithCat[2];
+        return {
+          name,
+          category: catCode === 'f' ? 'family' : 'general',
+          language: defaultLanguage,
+        };
+      }
+
+      if (result && !result.includes('\0')) {
+        return {
+          name: result,
+          category: defaultCategory,
+          language: defaultLanguage,
+        };
+      }
+    } catch {
+      // Continue to fallback
+    }
+  }
+
+  // 3. Fallback to original input for plain text names
+  return { name: cipherToken, category: defaultCategory, language: defaultLanguage };
 }
 
 /**

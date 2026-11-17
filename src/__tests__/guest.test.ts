@@ -149,7 +149,7 @@ describe('encryptGuestName and decryptGuestName', () => {
     const original = 'rahul-sharma';
     const cipher = encryptGuestName(original);
     expect(cipher).not.toBe(original);
-    expect(/^[0-9a-f]+$/.test(cipher)).toBe(true);
+    expect(/^[A-Za-z0-9_-]+$/.test(cipher)).toBe(true);
     expect(decryptGuestName(cipher)).toBe(original);
   });
 
@@ -212,6 +212,24 @@ describe('encryptGuestName and decryptGuestName', () => {
     expect(token.language).toBe('bn');
     const guest = buildGuestInfo(cipher, null);
     expect(guest.displayName).toBe('তন্ময় চন্দ্র ও পর্ণাশা সেন');
+  });
+
+  it('generates super-compact tokens for long Bengali names', () => {
+    const original = 'শ্রী তন্ময় চন্দ্র ও শ্রীমতী পর্ণাশা সেন';
+    const cipher = encryptGuestName(original, 'family', 'bn');
+    expect(cipher.length).toBeLessThan(70);
+    const token = decryptGuestToken(cipher);
+    expect(token.name).toBe(original);
+    expect(token.category).toBe('family');
+    expect(token.language).toBe('bn');
+  });
+
+  it('preserves backward compatibility with legacy hexadecimal tokens', () => {
+    const legacyHex = '45106862284710456f7b3381cff7e8b8d2c3'; // f:b:tanmoy-chandra
+    const token = decryptGuestToken(legacyHex);
+    expect(token.name).toBe('tanmoy-chandra');
+    expect(token.category).toBe('family');
+    expect(token.language).toBe('bn');
   });
 
   it('allows query param to override language when testing', () => {
