@@ -106,18 +106,20 @@ export class GuestNameTexture {
     const targetCenterX = width * 0.50;
     const targetCenterY = height * 0.50;
 
-    let fontSize = 118;
+    let fontSize = 142;
     if (lines.length === 1) {
-      fontSize = 134;
+      fontSize = 162;
     } else if (lines.length > 2) {
-      fontSize = 98;
+      fontSize = 118;
     }
 
     for (const line of lines) {
-      if (line.length > 18) {
-        fontSize = Math.min(fontSize, 92);
+      if (line.length > 22) {
+        fontSize = Math.min(fontSize, 108);
+      } else if (line.length > 18) {
+        fontSize = Math.min(fontSize, 120);
       } else if (line.length > 14) {
-        fontSize = Math.min(fontSize, 106);
+        fontSize = Math.min(fontSize, 134);
       }
     }
 
@@ -140,7 +142,7 @@ export class GuestNameTexture {
     });
 
     const blockLeftX = targetCenterX - maxNameWidth / 2;
-    const namesStartY = targetCenterY - totalNamesHeight / 2 + 20;
+    const namesStartY = targetCenterY - totalNamesHeight / 2 + 15;
 
     // 1. "To.." or "প্রতি.." label
     this.ctx.textAlign = 'left';
@@ -152,7 +154,7 @@ export class GuestNameTexture {
       : `normal 500 ${toFontSize}px "Cinzel", "Playfair Display", "Georgia", "Times New Roman", serif`;
     this.ctx.font = toFont;
     // Generous breathing space (gap) between "To.." and the first name
-    const toY = namesStartY - fontSize * 0.85;
+    const toY = namesStartY - fontSize * 0.82;
     this.ctx.fillText(toLabel, blockLeftX, toY);
 
     // 2. Guest Names rendered below
