@@ -7,6 +7,7 @@ interface LuxuryActionButtonProps {
   label: string;
   className?: string;
   disabled?: boolean;
+  language?: 'en' | 'bn';
 }
 
 /**
@@ -25,7 +26,10 @@ export function LuxuryActionButton({
   label,
   className = '',
   disabled = false,
+  language = 'en',
 }: LuxuryActionButtonProps) {
+  const isBengali = language === 'bn';
+
   return (
     <button
       type="button"
@@ -138,7 +142,18 @@ export function LuxuryActionButton({
 
           {/* Button Content: Larger Golden Serif Text (Clean, no arrow) */}
           <div className="relative z-10 flex items-center justify-center px-1">
-            <span className="font-serif font-medium text-sm sm:text-base md:text-[17px] tracking-[0.22em] uppercase select-none text-transparent bg-clip-text bg-gradient-to-b from-[#fff6d6] via-[#f7df94] to-[#d4a03e] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]">
+            <span
+              className={`font-serif font-medium select-none text-transparent bg-clip-text bg-gradient-to-b from-[#fff6d6] via-[#f7df94] to-[#d4a03e] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] drop-shadow-[0_0_10px_rgba(245,158,11,0.5)] ${
+                isBengali
+                  ? 'text-base sm:text-lg md:text-[19px] tracking-normal font-semibold'
+                  : 'text-sm sm:text-base md:text-[17px] tracking-[0.22em] uppercase'
+              }`}
+              style={
+                isBengali
+                  ? { fontFamily: "'Noto Serif Bengali', 'Hind Siliguri', serif" }
+                  : undefined
+              }
+            >
               {label}
             </span>
           </div>

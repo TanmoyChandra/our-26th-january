@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import { ENVELOPE_CONFIG } from '@/config/envelope';
+import type { InvitationLanguage } from '@/types/invitation';
 
 export interface GuestNameTextureOptions {
   displayName: string;
   category: string;
+  language?: InvitationLanguage;
 }
 
 /**
@@ -40,6 +42,8 @@ export class GuestNameTexture {
       Promise.all([
         document.fonts.load('600 120px "Dancing Script"'),
         document.fonts.load('600 120px "Caveat"'),
+        document.fonts.load('600 120px "Noto Serif Bengali"'),
+        document.fonts.load('600 120px "Hind Siliguri"'),
         document.fonts.ready,
       ])
         .then(() => {
@@ -59,15 +63,16 @@ export class GuestNameTexture {
 
   private parseLines(displayName: string): string[] {
     const rawSegments = displayName
-      .split(/\s*(?:&|\band\b|\bwith\b|\+|\n|,)\s*/i)
+      .split(/\s*(?:&|\band\b|\bwith\b|\+|\n|,|(?<=\s)ও(?=\s))\s*/i)
       .map((s) => s.trim())
       .filter(Boolean);
 
     return rawSegments.length > 0 ? rawSegments : [displayName];
   }
 
-  public update({ displayName }: GuestNameTextureOptions): void {
+  public update({ displayName, category = 'general', language = 'en' }: GuestNameTextureOptions): void {
     const { width, height } = this.canvas;
+    const isBengali = language === 'bn';
 
     this.ctx.clearRect(0, 0, width, height);
 
@@ -78,7 +83,7 @@ export class GuestNameTexture {
     // Soft warm crimson red ink
     this.ctx.fillStyle = '#8a2b34';
 
-    // Shifted slightly to the left: 48% across the width
+    // Shifted slightly to the left: 50% across the width
     const targetCenterX = width * 0.50;
     const targetCenterY = height * 0.50;
 
@@ -97,11 +102,13 @@ export class GuestNameTexture {
       }
     }
 
-    // Natural, organic handwriting font: Dancing Script with Caveat & handwriting fallbacks
-    const handwritingFont = '"Dancing Script", "Caveat", "Marck Script", "Segoe Script", cursive';
+    // Natural handwriting script for English, elegant literary serif for Bengali
+    const handwritingFont = isBengali
+      ? '"Noto Serif Bengali", "Hind Siliguri", serif'
+      : '"Dancing Script", "Caveat", "Marck Script", "Segoe Script", cursive';
     this.ctx.font = `600 ${fontSize}px ${handwritingFont}`;
 
-    const lineHeight = fontSize * 1.22;
+    const lineHeight = fontSize * 1.25;
     const totalNamesHeight = (lines.length - 1) * lineHeight;
 
     // Measure maximum name width to accurately determine the left edge of the block
@@ -116,16 +123,20 @@ export class GuestNameTexture {
     const blockLeftX = targetCenterX - maxNameWidth / 2;
     const namesStartY = targetCenterY - totalNamesHeight / 2 + 20;
 
-    // 1. "To.." in clean, normal serif font (font style for "to" unchanged as requested)
+    // 1. "To.." or "প্রতি.." label
     this.ctx.textAlign = 'left';
     this.ctx.textBaseline = 'bottom';
     const toFontSize = Math.round(fontSize * 0.44);
-    this.ctx.font = `normal 500 ${toFontSize}px "Cinzel", "Playfair Display", "Georgia", "Times New Roman", serif`;
+    const toLabel = isBengali ? 'প্রতি..' : 'To..';
+    const toFont = isBengali
+      ? `normal 600 ${toFontSize}px "Noto Serif Bengali", "Hind Siliguri", serif`
+      : `normal 500 ${toFontSize}px "Cinzel", "Playfair Display", "Georgia", "Times New Roman", serif`;
+    this.ctx.font = toFont;
     // Generous breathing space (gap) between "To.." and the first name
     const toY = namesStartY - fontSize * 0.85;
-    this.ctx.fillText('To..', blockLeftX, toY);
+    this.ctx.fillText(toLabel, blockLeftX, toY);
 
-    // 2. Guest Names rendered below in handwriting script
+    // 2. Guest Names rendered below
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
     this.ctx.font = `600 ${fontSize}px ${handwritingFont}`;

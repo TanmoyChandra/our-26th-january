@@ -5,11 +5,13 @@ import { ENVELOPE_CONFIG } from '@/config/envelope';
 import { GuestNameTexture } from './GuestNameTexture';
 import { createEnvelopeMaterials, EnvelopeMaterialsMap } from './EnvelopeMaterials';
 import { createEnvelopeModel, EnvelopeModelParts } from './EnvelopeModel';
+import type { InvitationLanguage } from '@/types/invitation';
 
 export interface EnvelopeSceneOptions {
   container: HTMLElement;
   guestName: string;
   category: string;
+  language?: InvitationLanguage;
   interactiveRotation?: boolean;
   onAnimationChange?: (isAnimating: boolean) => void;
   onUnfoldChange?: (isUnfolded: boolean) => void;
@@ -23,6 +25,7 @@ export class EnvelopeScene {
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls | null = null;
   private guestTexture: GuestNameTexture;
+  private language: InvitationLanguage = 'en';
   private frontArtworkTexture: THREE.Texture | null = null;
   private pocketArtworkTexture: THREE.Texture | null = null;
   private flapArtworkTexture: THREE.Texture | null = null;
@@ -110,10 +113,13 @@ export class EnvelopeScene {
     // 4. Lighting setup
     this.setupLighting();
 
+    this.language = options.language || 'en';
+
     // 5. Guest Name Texture mapped to envelope front
     this.guestTexture = new GuestNameTexture({
       displayName: options.guestName,
       category: options.category,
+      language: this.language,
     });
 
     // 6. Load textures for Front, Flap, and Pocket
@@ -155,8 +161,12 @@ export class EnvelopeScene {
       }
     );
 
+    const initialCardPath = this.language === 'bn'
+      ? (ENVELOPE_CONFIG.materials.cardTextureBnPath || ENVELOPE_CONFIG.materials.cardTexturePath)
+      : ENVELOPE_CONFIG.materials.cardTexturePath;
+
     this.cardArtworkTexture = textureLoader.load(
-      ENVELOPE_CONFIG.materials.cardTexturePath,
+      initialCardPath,
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.generateMipmaps = true;
@@ -1063,9 +1073,24 @@ export class EnvelopeScene {
     return this.isUnfolded;
   }
 
-  public updateGuest(name: string, category: string): void {
+  public updateGuest(name: string, category: string, language?: InvitationLanguage): void {
     if (this.isDisposed) return;
-    this.guestTexture.update({ displayName: name, category });
+    if (language && language !== this.language) {
+      this.language = language;
+      const textureLoader = new THREE.TextureLoader();
+      const cardPath = this.language === 'bn'
+        ? (ENVELOPE_CONFIG.materials.cardTextureBnPath || ENVELOPE_CONFIG.materials.cardTexturePath)
+        : ENVELOPE_CONFIG.materials.cardTexturePath;
+      textureLoader.load(cardPath, (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.generateMipmaps = true;
+        if (this.materials.cardPaper) {
+          this.materials.cardPaper.map = tex;
+          this.materials.cardPaper.needsUpdate = true;
+        }
+      });
+    }
+    this.guestTexture.update({ displayName: name, category, language: this.language });
   }
 
   /**

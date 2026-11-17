@@ -4,6 +4,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { m, AnimatePresence } from 'framer-motion';
 import { VENUE_MAPS_CONFIG } from '@/config/invitation';
+import { getTranslations } from '@/config/translations';
 import { RosePetalsOverlay } from './RosePetalsOverlay';
 import { LuxuryActionButton } from './LuxuryActionButton';
 import {
@@ -43,6 +44,8 @@ export function InvitationExperience({
   const [isUnfolded, setIsUnfolded] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [scrollPage, setScrollPage] = useState(1);
+
+  const t = getTranslations(guestInfo.language);
 
   const handleToggle = useCallback(() => {
     if (isAnimating) return; // Prevent any interaction while animation is playing
@@ -137,6 +140,7 @@ export function InvitationExperience({
             ref={envelope3DRef}
             guestName={guestInfo.displayName}
             category={guestInfo.category}
+            language={guestInfo.language}
             onAnimationChange={setIsAnimating}
             onUnfoldChange={handleUnfoldChange}
             onScrollChange={handleScrollChange}
@@ -166,7 +170,8 @@ export function InvitationExperience({
           {!isUnfolded && (
             <LuxuryActionButton
               onClick={handleToggle}
-              label={isOpen ? 'CLOSE' : 'OPEN'}
+              label={isOpen ? t.close : t.open}
+              language={guestInfo.language}
               className={!isOpen ? 'min-w-[160px] sm:min-w-[200px]' : ''}
             />
           )}
@@ -175,7 +180,8 @@ export function InvitationExperience({
           {isOpen && !isUnfolded && (
             <LuxuryActionButton
               onClick={handleToggleUnfold}
-              label="READ"
+              label={t.read}
+              language={guestInfo.language}
             />
           )}
 
@@ -192,7 +198,8 @@ export function InvitationExperience({
               >
                 <LuxuryActionButton
                   onClick={handleScrollNext}
-                  label="SCROLL"
+                  label={t.scroll}
+                  language={guestInfo.language}
                   className="min-w-[160px] sm:min-w-[200px]"
                 />
               </div>
@@ -207,7 +214,8 @@ export function InvitationExperience({
               >
                 <LuxuryActionButton
                   onClick={handleToggleUnfold}
-                  label="FOLD"
+                  label={t.fold}
+                  language={guestInfo.language}
                   className="min-w-[160px] sm:min-w-[200px]"
                 />
               </div>
@@ -227,14 +235,14 @@ export function InvitationExperience({
             exit={{ opacity: 0, scale: 0.7, y: 16 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
             className="fixed bottom-12 sm:bottom-16 right-5 sm:right-7 z-40 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
-            aria-label="Venue Google Maps link"
+            aria-label={t.googleMapsLabel}
           >
             <a
               href={VENUE_MAPS_CONFIG.googleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="group relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white shadow-xl shadow-black/70 hover:shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 p-1 border border-white/80 focus:outline-none"
-              title={`Open venue in Google Maps: ${VENUE_MAPS_CONFIG.venueName}`}
+              title={t.googleMapsLabel}
             >
               <img
                 src="/images/google_maps_pin.png"

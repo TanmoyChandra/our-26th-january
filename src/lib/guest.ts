@@ -1,4 +1,4 @@
-import type { GuestInfo, InvitationCategory } from '@/types/invitation';
+import type { GuestInfo, InvitationCategory, InvitationLanguage } from '@/types/invitation';
 
 const VALID_CATEGORIES: InvitationCategory[] = ['family', 'general'];
 const CIPHER_KEY = '26-jan-vivah';
@@ -6,17 +6,23 @@ const CIPHER_KEY = '26-jan-vivah';
 export interface DecryptedGuestToken {
   name: string;
   category: InvitationCategory;
+  language: InvitationLanguage;
 }
 
 /**
- * Encrypt a plaintext guest name or slug AND optional category ('family' | 'general' | 'f' | 'g')
- * into a single unified URL-safe lowercase hex ciphertext.
- * Format inside payload: `${typeCode}:${name}` (e.g. `f:tanmoy-chandra`)
+ * Encrypt a plaintext guest name or slug, category ('family' | 'general' | 'f' | 'g'),
+ * and optional language ('en' | 'bn' | 'b' | 'e') into a single unified URL-safe lowercase hex ciphertext.
+ * Format inside payload: `${typeCode}:${langCode}:${name}` (e.g. `f:b:tanmoy-chandra`)
  */
-export function encryptGuestName(text: string, category?: InvitationCategory | string): string {
+export function encryptGuestName(
+  text: string,
+  category?: InvitationCategory | string,
+  language?: InvitationLanguage | string
+): string {
   if (!text) return '';
   const typeCode = (category === 'family' || category === 'f') ? 'f' : 'g';
-  const payload = category ? `${typeCode}:${text.trim()}` : text.trim();
+  const langCode = (language === 'bn' || language === 'b' || language === 'bengali') ? 'b' : 'e';
+  const payload = `${typeCode}:${langCode}:${text.trim()}`;
   const encoder = new TextEncoder();
   const bytes = encoder.encode(payload);
   const keyBytes = encoder.encode(CIPHER_KEY);
@@ -29,15 +35,20 @@ export function encryptGuestName(text: string, category?: InvitationCategory | s
 }
 
 /**
- * Decrypt a hex ciphertext back into the original guest name and embedded category.
+ * Decrypt a hex ciphertext back into the original guest name, embedded category, and language.
  * If the input is not a valid ciphertext or decryption fails, falls back gracefully.
  */
-export function decryptGuestToken(cipherHex: string, fallbackType?: string | null): DecryptedGuestToken {
+export function decryptGuestToken(
+  cipherHex: string,
+  fallbackType?: string | null,
+  fallbackLang?: string | null
+): DecryptedGuestToken {
   const defaultCategory = parseCategory(fallbackType);
+  const defaultLanguage = parseLanguage(fallbackLang);
 
   // If not a valid hex string of even length, return raw input as fallback
   if (!cipherHex || cipherHex.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(cipherHex)) {
-    return { name: cipherHex, category: defaultCategory };
+    return { name: cipherHex, category: defaultCategory, language: defaultLanguage };
   }
 
   try {
@@ -51,28 +62,44 @@ export function decryptGuestToken(cipherHex: string, fallbackType?: string | nul
     const decoder = new TextDecoder('utf-8', { fatal: true });
     const result = decoder.decode(bytes);
 
-    // 1. Check if it contains the embedded category prefix 'f:' or 'g:'
-    if (/^[fg]:/.test(result)) {
-      const catCode = result[0];
-      const name = result.slice(2);
+    // 1. Format with embedded category and language: 'f:b:name', 'g:e:name', etc.
+    const matchWithLang = /^([fg]):([be]|bn|en):(.+)$/i.exec(result);
+    if (matchWithLang) {
+      const catCode = matchWithLang[1].toLowerCase();
+      const langCode = matchWithLang[2].toLowerCase();
+      const name = matchWithLang[3];
       return {
         name,
         category: catCode === 'f' ? 'family' : 'general',
+        language: (langCode === 'b' || langCode === 'bn') ? 'bn' : 'en',
       };
     }
 
-    // 2. Legacy token without category prefix
+    // 2. Legacy format with category prefix only: 'f:name' or 'g:name'
+    const matchWithCat = /^([fg]):(.+)$/i.exec(result);
+    if (matchWithCat) {
+      const catCode = matchWithCat[1].toLowerCase();
+      const name = matchWithCat[2];
+      return {
+        name,
+        category: catCode === 'f' ? 'family' : 'general',
+        language: defaultLanguage,
+      };
+    }
+
+    // 3. Legacy token without category or language prefix
     if (/^[a-zA-Z0-9\s_&.,'’\-]+$/.test(result)) {
       return {
         name: result,
         category: defaultCategory,
+        language: defaultLanguage,
       };
     }
   } catch {
     // Fall back to original input on error
   }
 
-  return { name: cipherHex, category: defaultCategory };
+  return { name: cipherHex, category: defaultCategory, language: defaultLanguage };
 }
 
 /**
@@ -104,6 +131,20 @@ export function toDisplayName(raw: string): string {
 }
 
 /**
+ * Parse and validate language code.
+ * Accepts 'b', 'bn', 'bengali', 'bangla' for Bengali.
+ * Defaults to 'en' (English).
+ */
+export function parseLanguage(raw: string | null | undefined): InvitationLanguage {
+  if (!raw) return 'en';
+  const clean = raw.toLowerCase().trim();
+  if (clean === 'bn' || clean === 'b' || clean === 'bengali' || clean === 'bangla') {
+    return 'bn';
+  }
+  return 'en';
+}
+
+/**
  * Parse and validate the category query param.
  * Accepts 'f' or 'family' for family tier.
  * Accepts 'g' or 'general' (or falls back to) for general tier.
@@ -120,16 +161,24 @@ export function parseCategory(raw: string | null | undefined): InvitationCategor
 
 /**
  * Build a GuestInfo object from URL parts.
- * Automatically decrypts obfuscated ciphertext slugs into original guest names and categories.
+ * Automatically decrypts obfuscated ciphertext slugs into original guest names, categories, and language.
  * @param slug   - the [guest] segment from the URL (may be ciphertext with embedded category, or plaintext)
- * @param typeParam - optional fallback `type` query param value
+ * @param typeParam - optional fallback or override `type` query param value
+ * @param langParam - optional fallback or override `lang` query param value
  */
-export function buildGuestInfo(slug: string, typeParam: string | null | undefined): GuestInfo {
+export function buildGuestInfo(
+  slug: string,
+  typeParam?: string | null | undefined,
+  langParam?: string | null | undefined
+): GuestInfo {
   const decoded = decodeURIComponent(slug);
-  const decrypted = decryptGuestToken(decoded, typeParam);
+  const decrypted = decryptGuestToken(decoded, typeParam, langParam);
+  const language = langParam ? parseLanguage(langParam) : decrypted.language;
+  const category = typeParam ? parseCategory(typeParam) : decrypted.category;
   return {
     name: decrypted.name,
     displayName: toDisplayName(decrypted.name),
-    category: decrypted.category,
+    category,
+    language,
   };
 }

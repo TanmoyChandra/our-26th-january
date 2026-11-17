@@ -11,6 +11,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fontsource/hind-siliguri": "^5.3.0",
+    "@fontsource/noto-serif-bengali": "^5.3.0",
     "@types/three": "^0.187.0",
     "framer-motion": "^14.13.0",
     "gsap": "^3.15.1",

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   toDisplayName,
   parseCategory,
+  parseLanguage,
   buildGuestInfo,
   encryptGuestName,
   decryptGuestName,
@@ -32,6 +33,35 @@ describe('toDisplayName', () => {
   });
   it('converts all-caps slug to Proper Case', () => {
     expect(toDisplayName('TANMOY-CHANDRA')).toBe('Tanmoy Chandra');
+  });
+  it('preserves Bengali names correctly', () => {
+    expect(toDisplayName('তন্ময়-চন্দ্র')).toBe('তন্ময় চন্দ্র');
+  });
+});
+
+describe('parseLanguage', () => {
+  it('parses "bn" as Bengali', () => {
+    expect(parseLanguage('bn')).toBe('bn');
+  });
+  it('parses single letter "b" as Bengali', () => {
+    expect(parseLanguage('b')).toBe('bn');
+  });
+  it('parses "bengali" as Bengali', () => {
+    expect(parseLanguage('bengali')).toBe('bn');
+  });
+  it('parses "bangla" as Bengali', () => {
+    expect(parseLanguage('bangla')).toBe('bn');
+  });
+  it('parses "en" as English', () => {
+    expect(parseLanguage('en')).toBe('en');
+  });
+  it('parses "e" as English', () => {
+    expect(parseLanguage('e')).toBe('en');
+  });
+  it('defaults to "en" for null, undefined, or unknown', () => {
+    expect(parseLanguage(null)).toBe('en');
+    expect(parseLanguage(undefined)).toBe('en');
+    expect(parseLanguage('fr')).toBe('en');
   });
 });
 
@@ -146,5 +176,35 @@ describe('encryptGuestName and decryptGuestName', () => {
     const token = decryptGuestToken(cipher);
     expect(token.name).toBe('sourav-ganguly');
     expect(token.category).toBe('general');
+  });
+
+  it('round-trips embedded Bengali language and family category', () => {
+    const cipher = encryptGuestName('tanmoy-chandra', 'family', 'bn');
+    const token = decryptGuestToken(cipher);
+    expect(token.name).toBe('tanmoy-chandra');
+    expect(token.category).toBe('family');
+    expect(token.language).toBe('bn');
+  });
+
+  it('round-trips embedded English language and general category', () => {
+    const cipher = encryptGuestName('tanmoy-chandra', 'general', 'en');
+    const token = decryptGuestToken(cipher);
+    expect(token.name).toBe('tanmoy-chandra');
+    expect(token.category).toBe('general');
+    expect(token.language).toBe('en');
+  });
+
+  it('builds guest info with embedded Bengali language', () => {
+    const cipher = encryptGuestName('tanmoy-chandra', 'family', 'bn');
+    const guest = buildGuestInfo(cipher, null);
+    expect(guest.name).toBe('tanmoy-chandra');
+    expect(guest.displayName).toBe('Tanmoy Chandra');
+    expect(guest.category).toBe('family');
+    expect(guest.language).toBe('bn');
+  });
+
+  it('allows query param to override language when testing', () => {
+    const guest = buildGuestInfo('tanmoy-chandra', 'f', 'bn');
+    expect(guest.language).toBe('bn');
   });
 });

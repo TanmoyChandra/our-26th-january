@@ -2,10 +2,11 @@
 
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { EnvelopeScene } from './Envelope/EnvelopeScene';
+import type { InvitationLanguage } from '@/types/invitation';
 
 export interface Envelope3DRef {
   setProgress?: (progress: number) => void;
-  updateGuest: (name: string, category: string) => void;
+  updateGuest: (name: string, category: string, language?: InvitationLanguage) => void;
   toggleOpen: () => boolean;
   getIsOpen: () => boolean;
   toggleUnfold: () => boolean;
@@ -19,6 +20,7 @@ export interface Envelope3DRef {
 interface Envelope3DProps {
   guestName: string;
   category: string;
+  language?: InvitationLanguage;
   className?: string;
   onReady?: () => void;
   onAnimationChange?: (isAnimating: boolean) => void;
@@ -31,6 +33,7 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
     {
       guestName,
       category,
+      language = 'en',
       className = '',
       onReady,
       onAnimationChange,
@@ -59,8 +62,8 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
     useImperativeHandle(
       ref,
       () => ({
-        updateGuest: (name: string, cat: string) => {
-          sceneRef.current?.updateGuest(name, cat);
+        updateGuest: (name: string, cat: string, lang?: InvitationLanguage) => {
+          sceneRef.current?.updateGuest(name, cat, lang);
         },
         toggleOpen: () => {
           return sceneRef.current ? sceneRef.current.toggleOpen() : false;
@@ -99,6 +102,7 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
         container,
         guestName,
         category,
+        language,
         interactiveRotation: true,
         onAnimationChange: (animating) => {
           callbacksRef.current.onAnimationChange?.(animating);
@@ -121,12 +125,12 @@ export const Envelope3D = forwardRef<Envelope3DRef, Envelope3DProps>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Dynamically update guest name and category without re-creating scene
+    // Dynamically update guest name, category, and language without re-creating scene
     useEffect(() => {
       if (sceneRef.current) {
-        sceneRef.current.updateGuest(guestName, category);
+        sceneRef.current.updateGuest(guestName, category, language);
       }
-    }, [guestName, category]);
+    }, [guestName, category, language]);
 
     return (
       <div

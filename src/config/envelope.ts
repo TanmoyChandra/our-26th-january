@@ -32,6 +32,7 @@ export interface EnvelopeConfig {
     flapTexturePath: string;
     pocketTexturePath: string;
     cardTexturePath: string;
+    cardTextureBnPath: string;
     cardPage2TexturePath: string;
     cardBackTexturePath: string;
   };
@@ -90,6 +91,7 @@ export const ENVELOPE_CONFIG: EnvelopeConfig = {
     flapTexturePath: '/textures/envelope/flap.png',
     pocketTexturePath: '/textures/envelope/pocket.png',
     cardTexturePath: '/textures/envelope/card_engagement.png',
+    cardTextureBnPath: '/textures/envelope/card_engagement_bn.png',
     cardPage2TexturePath: '/textures/envelope/card_page_2.jpg',
     cardBackTexturePath: '/textures/envelope/card_back.png',
   },

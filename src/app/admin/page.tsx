@@ -20,6 +20,7 @@ interface GeneratedLinkItem {
   id: string;
   name: string;
   category: 'family' | 'general';
+  language: 'en' | 'bn';
   url: string;
   timestamp: number;
 }
@@ -28,6 +29,7 @@ export default function AdminLinkGeneratorPage() {
   const [baseUrl, setBaseUrl] = useState('');
   const [names, setNames] = useState<string[]>(['']);
   const [category, setCategory] = useState<'family' | 'general'>('general');
+  const [language, setLanguage] = useState<'en' | 'bn'>('en');
   const [generatedLinks, setGeneratedLinks] = useState<GeneratedLinkItem[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -116,13 +118,14 @@ export default function AdminLinkGeneratorPage() {
     // Joint combined name
     const combinedName = combineDisplayNames(cleanNames);
     const rawSlug = formatSlug(combinedName);
-    const cipherSlug = encryptGuestName(rawSlug, category);
+    const cipherSlug = encryptGuestName(rawSlug, category, language);
     const url = `${host}/${cipherSlug}`;
 
     const newLink: GeneratedLinkItem = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       name: combinedName,
       category,
+      language,
       url,
       timestamp: Date.now(),
     };
@@ -326,6 +329,56 @@ export default function AdminLinkGeneratorPage() {
               </div>
             </div>
 
+            {/* 4. Language Toggle (English vs Bengali) */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-300">
+                4. Language / ভাষা
+              </label>
+
+              <div className="grid grid-cols-2 gap-2 bg-neutral-950 p-1.5 rounded-xl border border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setLanguage('en')}
+                  className={`flex flex-col items-center justify-center py-2.5 px-3 rounded-lg text-xs font-medium transition-all ${
+                    language === 'en'
+                      ? 'bg-amber-500 text-neutral-950 font-semibold shadow-md'
+                      : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900'
+                  }`}
+                >
+                  <span className="text-sm">English</span>
+                  <span
+                    className={`text-[10px] ${
+                      language === 'en' ? 'text-neutral-900/80' : 'text-neutral-500'
+                    }`}
+                  >
+                    Standard English
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setLanguage('bn')}
+                  className={`flex flex-col items-center justify-center py-2.5 px-3 rounded-lg text-xs font-medium transition-all ${
+                    language === 'bn'
+                      ? 'bg-amber-500 text-neutral-950 font-semibold shadow-md'
+                      : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900'
+                  }`}
+                >
+                  <span className="text-sm font-semibold">বাংলা (Bengali)</span>
+                  <span
+                    className={`text-[10px] ${
+                      language === 'bn' ? 'text-neutral-900/80' : 'text-neutral-500'
+                    }`}
+                  >
+                    সম্পূর্ণ বাংলা সংস্করণ
+                  </span>
+                </button>
+              </div>
+              <p className="text-[11px] text-neutral-500">
+                Bengali converts all invitation buttons, envelope labels, and texts into Bengali with traditional typography.
+              </p>
+            </div>
+
             {/* Submit Button */}
             <button
               type="submit"
@@ -375,6 +428,15 @@ export default function AdminLinkGeneratorPage() {
                         >
                           {item.category}
                         </span>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
+                            item.language === 'bn'
+                              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                              : 'bg-sky-500/15 text-sky-300 border border-sky-500/30'
+                          }`}
+                        >
+                          {item.language === 'bn' ? 'বাংলা' : 'EN'}
+                        </span>
                         <span className="text-[11px] text-neutral-500">
                           {new Date(item.timestamp).toLocaleTimeString([], {
                             hour: '2-digit',
@@ -388,7 +450,9 @@ export default function AdminLinkGeneratorPage() {
                     <div className="flex items-center gap-1.5">
                       <a
                         href={`https://wa.me/?text=${encodeURIComponent(
-                          `You are warmly invited! Please open your invitation here:\n${item.url}`
+                          item.language === 'bn'
+                            ? `আপনার জন্য শুভ বাগদানের ডিজিটাল আমন্ত্রণপত্র:\n${item.name}\n${item.url}`
+                            : `You are warmly invited! Please open your invitation here:\n${item.name}\n${item.url}`
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"

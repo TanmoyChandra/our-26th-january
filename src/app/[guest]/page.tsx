@@ -9,19 +9,20 @@ export const dynamic = "force-dynamic";
 
 interface GuestPageProps {
   params: Promise<{ guest: string }>;
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; lang?: string; language?: string }>;
 }
 
 export default async function GuestPage({ params, searchParams }: GuestPageProps) {
   const { guest } = await params;
-  const { type } = await searchParams;
+  const { type, lang, language } = await searchParams;
+  const langParam = lang || language;
 
   // Validate guest slug — reject empty or obviously invalid slugs
   if (!guest || guest.length > 100) {
     notFound();
   }
 
-  const guestInfo = buildGuestInfo(guest, type);
+  const guestInfo = buildGuestInfo(guest, type, langParam);
   const visibleEvents = getVisibleEvents(guestInfo.category);
   const config = getInvitationConfig();
 

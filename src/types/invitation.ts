@@ -1,9 +1,11 @@
 export type InvitationCategory = 'family' | 'general';
+export type InvitationLanguage = 'en' | 'bn';
 
 export interface GuestInfo {
   name: string;         // decoded from URL slug
   displayName: string;  // capitalised for display
   category: InvitationCategory;
+  language: InvitationLanguage;
 }
 
 export interface EventDetails {

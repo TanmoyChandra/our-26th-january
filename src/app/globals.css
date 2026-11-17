@@ -1,4 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Caveat:wght@600;700&display=swap');
+@import '@fontsource/noto-serif-bengali/bengali.css';
+@import '@fontsource/hind-siliguri/bengali.css';
 @import "tailwindcss";
 
 @layer base {
@@ -15,6 +17,7 @@
 
     /* Typography tokens */
     --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    --font-bengali: 'Noto Serif Bengali', 'Hind Siliguri', serif;
   }
 
   * {
