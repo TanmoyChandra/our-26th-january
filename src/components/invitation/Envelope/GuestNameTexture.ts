@@ -51,7 +51,7 @@ export class GuestNameTexture {
             document.fonts.add(loaded);
             this.update(options);
           })
-          .catch(() => {});
+          .catch(() => { });
       } catch {
         // Fallback if FontFace constructor is unavailable
       }
@@ -143,8 +143,8 @@ export class GuestNameTexture {
     });
 
     const blockLeftX = targetCenterX - maxNameWidth / 2;
-    // Shift the whole text area down by 10px
-    const namesStartY = targetCenterY - totalNamesHeight / 2 + 28;
+    // Shift the whole text area down by 20px
+    const namesStartY = targetCenterY - totalNamesHeight / 2 + 38;
 
     // 1. "To.." or "প্রতি.." label
     this.ctx.textAlign = 'left';
