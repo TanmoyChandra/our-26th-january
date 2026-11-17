@@ -143,7 +143,8 @@ export class GuestNameTexture {
     });
 
     const blockLeftX = targetCenterX - maxNameWidth / 2;
-    const namesStartY = targetCenterY - totalNamesHeight / 2 + 18;
+    // Shift the whole text area down by 10px
+    const namesStartY = targetCenterY - totalNamesHeight / 2 + 28;
 
     // 1. "To.." or "প্রতি.." label
     this.ctx.textAlign = 'left';
