@@ -163,7 +163,7 @@ export default function AdminLinkGeneratorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col justify-between selection:bg-amber-500/30">
+    <div className="min-h-[100dvh] w-full bg-neutral-950 text-neutral-100 flex flex-col justify-between selection:bg-amber-500/30 overflow-y-auto">
       {/* Top Navbar */}
       <header className="border-b border-neutral-800 bg-neutral-900/60 backdrop-blur-md sticky top-0 z-30 px-4 py-3 sm:px-6">
         <div className="max-w-3xl mx-auto flex items-center justify-between">

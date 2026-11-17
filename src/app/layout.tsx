@@ -47,7 +47,7 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className={`${inter.variable} ${greatVibes.variable} ${dancingScript.variable}`} suppressHydrationWarning>
-      <body className="min-h-[100dvh] h-[100dvh] w-full overflow-hidden bg-background font-sans antialiased" suppressHydrationWarning>
+      <body className="min-h-[100dvh] w-full bg-background font-sans antialiased" suppressHydrationWarning>
         <MotionProvider>
           {children}
         </MotionProvider>
