@@ -159,21 +159,22 @@ export class GuestNameTexture {
     const targetCenterX = width * 0.50;
     const targetCenterY = height * 0.50;
 
-    // Exactly 10% larger than the original baseline
-    let fontSize = 130;
+    // Calibrate font size: Bengali font Li Shobuj Nolua has different proportions than Dancing Script.
+    // English font is adjusted slightly smaller for ideal breathing room next to the couple illustration.
+    let fontSize = isBengali ? 130 : 116;
     if (lines.length === 1) {
-      fontSize = 148;
+      fontSize = isBengali ? 148 : 132;
     } else if (lines.length > 2) {
-      fontSize = 108;
+      fontSize = isBengali ? 108 : 96;
     }
 
     for (const line of lines) {
       if (line.length > 22) {
-        fontSize = Math.min(fontSize, 95);
+        fontSize = Math.min(fontSize, isBengali ? 95 : 84);
       } else if (line.length > 18) {
-        fontSize = Math.min(fontSize, 102);
+        fontSize = Math.min(fontSize, isBengali ? 102 : 92);
       } else if (line.length > 14) {
-        fontSize = Math.min(fontSize, 117);
+        fontSize = Math.min(fontSize, isBengali ? 117 : 105);
       }
     }
 
@@ -196,16 +197,17 @@ export class GuestNameTexture {
     });
 
     const blockLeftX = targetCenterX - maxNameWidth / 2;
-    // Shift the whole text area down by 10px
-    const namesStartY = targetCenterY - totalNamesHeight / 2 + 28;
+    // Shift text area down for breathing room below the couple arch artwork
+    const verticalOffset = isBengali ? 36 : 58;
+    const namesStartY = targetCenterY - totalNamesHeight / 2 + verticalOffset;
 
     // 1. Label setup ("To.." or "প্রতি..")
-    const toFontSize = Math.round(fontSize * 0.44);
+    const toFontSize = Math.round(fontSize * (isBengali ? 0.44 : 0.40));
     const toLabel = isBengali ? 'প্রতি..' : 'To..';
     const toFont = isBengali
       ? `normal 600 ${toFontSize}px "Li Shobuj Nolua Unicode", "Li Shobuj Nolua", "Noto Serif Bengali", serif`
       : `normal 500 ${toFontSize}px "Cinzel", "Playfair Display", "Georgia", "Times New Roman", serif`;
-    const toY = namesStartY - fontSize * 0.84;
+    const toY = namesStartY - fontSize * (isBengali ? 0.84 : 0.80);
 
     // PASS 1: Natural Ink Absorption Halo (Simulates liquid marker ink wicking slightly into cardstock fibers)
     this.ctx.save();
