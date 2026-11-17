@@ -5,6 +5,7 @@ import {
   buildGuestInfo,
   encryptGuestName,
   decryptGuestName,
+  decryptGuestToken,
 } from '@/lib/guest';
 
 describe('toDisplayName', () => {
@@ -84,7 +85,21 @@ describe('buildGuestInfo', () => {
     expect(guest.name).toBe('priya kumari');
     expect(guest.displayName).toBe('Priya Kumari');
   });
-  it('decrypts ciphertext slug into Proper Case display name', () => {
+  it('decrypts ciphertext slug with embedded family category without query param', () => {
+    const cipher = encryptGuestName('tanmoy-chandra', 'family');
+    const guest = buildGuestInfo(cipher, null);
+    expect(guest.name).toBe('tanmoy-chandra');
+    expect(guest.displayName).toBe('Tanmoy Chandra');
+    expect(guest.category).toBe('family');
+  });
+  it('decrypts ciphertext slug with embedded general category without query param', () => {
+    const cipher = encryptGuestName('amit-sharma', 'general');
+    const guest = buildGuestInfo(cipher, null);
+    expect(guest.name).toBe('amit-sharma');
+    expect(guest.displayName).toBe('Amit Sharma');
+    expect(guest.category).toBe('general');
+  });
+  it('decrypts legacy ciphertext slug into Proper Case display name with query param', () => {
     const cipher = encryptGuestName('tanmoy-chandra');
     const guest = buildGuestInfo(cipher, 'f');
     expect(guest.name).toBe('tanmoy-chandra');
@@ -117,5 +132,19 @@ describe('encryptGuestName and decryptGuestName', () => {
 
   it('falls back gracefully on plaintext input', () => {
     expect(decryptGuestName('plain-name')).toBe('plain-name');
+  });
+
+  it('round-trips embedded family category token', () => {
+    const cipher = encryptGuestName('priya-sen', 'family');
+    const token = decryptGuestToken(cipher);
+    expect(token.name).toBe('priya-sen');
+    expect(token.category).toBe('family');
+  });
+
+  it('round-trips embedded general category token', () => {
+    const cipher = encryptGuestName('sourav-ganguly', 'general');
+    const token = decryptGuestToken(cipher);
+    expect(token.name).toBe('sourav-ganguly');
+    expect(token.category).toBe('general');
   });
 });

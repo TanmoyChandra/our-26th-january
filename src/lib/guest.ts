@@ -3,13 +3,22 @@ import type { GuestInfo, InvitationCategory } from '@/types/invitation';
 const VALID_CATEGORIES: InvitationCategory[] = ['family', 'general'];
 const CIPHER_KEY = '26-jan-vivah';
 
+export interface DecryptedGuestToken {
+  name: string;
+  category: InvitationCategory;
+}
+
 /**
- * Encrypt a plaintext guest name or slug into a URL-safe lowercase hex ciphertext.
+ * Encrypt a plaintext guest name or slug AND optional category ('family' | 'general' | 'f' | 'g')
+ * into a single unified URL-safe lowercase hex ciphertext.
+ * Format inside payload: `${typeCode}:${name}` (e.g. `f:tanmoy-chandra`)
  */
-export function encryptGuestName(text: string): string {
+export function encryptGuestName(text: string, category?: InvitationCategory | string): string {
   if (!text) return '';
+  const typeCode = (category === 'family' || category === 'f') ? 'f' : 'g';
+  const payload = category ? `${typeCode}:${text.trim()}` : text.trim();
   const encoder = new TextEncoder();
-  const bytes = encoder.encode(text.trim());
+  const bytes = encoder.encode(payload);
   const keyBytes = encoder.encode(CIPHER_KEY);
   let hex = '';
   for (let i = 0; i < bytes.length; i++) {
@@ -20,13 +29,15 @@ export function encryptGuestName(text: string): string {
 }
 
 /**
- * Decrypt a hex ciphertext back into the original guest name string.
- * If the input is not a valid ciphertext or decryption fails, falls back gracefully to raw text.
+ * Decrypt a hex ciphertext back into the original guest name and embedded category.
+ * If the input is not a valid ciphertext or decryption fails, falls back gracefully.
  */
-export function decryptGuestName(cipherHex: string): string {
+export function decryptGuestToken(cipherHex: string, fallbackType?: string | null): DecryptedGuestToken {
+  const defaultCategory = parseCategory(fallbackType);
+
   // If not a valid hex string of even length, return raw input as fallback
   if (!cipherHex || cipherHex.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(cipherHex)) {
-    return cipherHex;
+    return { name: cipherHex, category: defaultCategory };
   }
 
   try {
@@ -39,15 +50,36 @@ export function decryptGuestName(cipherHex: string): string {
     }
     const decoder = new TextDecoder('utf-8', { fatal: true });
     const result = decoder.decode(bytes);
-    // Sanity check: must contain reasonable characters
+
+    // 1. Check if it contains the embedded category prefix 'f:' or 'g:'
+    if (/^[fg]:/.test(result)) {
+      const catCode = result[0];
+      const name = result.slice(2);
+      return {
+        name,
+        category: catCode === 'f' ? 'family' : 'general',
+      };
+    }
+
+    // 2. Legacy token without category prefix
     if (/^[a-zA-Z0-9\s_&.,'’\-]+$/.test(result)) {
-      return result;
+      return {
+        name: result,
+        category: defaultCategory,
+      };
     }
   } catch {
     // Fall back to original input on error
   }
 
-  return cipherHex;
+  return { name: cipherHex, category: defaultCategory };
+}
+
+/**
+ * Backward-compatible helper for decrypting name only
+ */
+export function decryptGuestName(cipherHex: string): string {
+  return decryptGuestToken(cipherHex).name;
 }
 
 /**
@@ -88,16 +120,16 @@ export function parseCategory(raw: string | null | undefined): InvitationCategor
 
 /**
  * Build a GuestInfo object from URL parts.
- * Automatically decrypts obfuscated ciphertext slugs into original guest names.
- * @param slug   - the [guest] segment from the URL (may be ciphertext or plaintext)
- * @param typeParam - the `type` query param value
+ * Automatically decrypts obfuscated ciphertext slugs into original guest names and categories.
+ * @param slug   - the [guest] segment from the URL (may be ciphertext with embedded category, or plaintext)
+ * @param typeParam - optional fallback `type` query param value
  */
 export function buildGuestInfo(slug: string, typeParam: string | null | undefined): GuestInfo {
   const decoded = decodeURIComponent(slug);
-  const decryptedName = decryptGuestName(decoded);
+  const decrypted = decryptGuestToken(decoded, typeParam);
   return {
-    name: decryptedName,
-    displayName: toDisplayName(decryptedName),
-    category: parseCategory(typeParam),
+    name: decrypted.name,
+    displayName: toDisplayName(decrypted.name),
+    category: decrypted.category,
   };
 }
