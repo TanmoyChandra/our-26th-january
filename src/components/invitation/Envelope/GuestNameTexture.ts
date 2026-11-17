@@ -20,6 +20,7 @@ export class GuestNameTexture {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private texture: THREE.CanvasTexture;
+  private grainPattern: CanvasPattern | null = null;
 
   constructor(options: GuestNameTextureOptions) {
     this.canvas = document.createElement('canvas');
@@ -37,6 +38,8 @@ export class GuestNameTexture {
     this.texture.generateMipmaps = true;
     this.texture.minFilter = THREE.LinearMipmapLinearFilter;
     this.texture.magFilter = THREE.LinearFilter;
+
+    this.initMarkerGrainPattern();
 
     if (typeof document !== 'undefined') {
       // Explicitly load the user's custom Bengali font for Canvas 2D
@@ -78,6 +81,56 @@ export class GuestNameTexture {
 
   public getTexture(): THREE.CanvasTexture {
     return this.texture;
+  }
+
+  /**
+   * Generates a porous paper tooth and felt-tip marker micro-fiber grain texture
+   * to simulate physical marker ink bleeding and settling into envelope fibers.
+   */
+  private initMarkerGrainPattern(): void {
+    if (typeof document === 'undefined') return;
+    try {
+      const size = 128;
+      const grainCanvas = document.createElement('canvas');
+      grainCanvas.width = size;
+      grainCanvas.height = size;
+      const gctx = grainCanvas.getContext('2d');
+      if (!gctx) return;
+
+      const imgData = gctx.createImageData(size, size);
+      const data = imgData.data;
+
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const idx = (y * size + x) * 4;
+          const freq1 = Math.sin(x * 0.45) * Math.cos(y * 0.40);
+          const freq2 = Math.sin((x * 0.8 + y * 0.6) * 0.7);
+          const jitter = Math.random() - 0.5;
+          const val = freq1 * 0.35 + freq2 * 0.25 + jitter * 0.40;
+
+          if (val > 0.08) {
+            // High fiber highlight / lighter ink variation
+            data[idx] = 162;
+            data[idx + 1] = 58;
+            data[idx + 2] = 68;
+            data[idx + 3] = Math.min(255, Math.floor(val * 130));
+          } else if (val < -0.08) {
+            // Porous ink groove / pooled dye in paper cavity
+            data[idx] = 92;
+            data[idx + 1] = 18;
+            data[idx + 2] = 26;
+            data[idx + 3] = Math.min(255, Math.floor(-val * 150));
+          } else {
+            data[idx + 3] = 0;
+          }
+        }
+      }
+
+      gctx.putImageData(imgData, 0, 0);
+      this.grainPattern = this.ctx.createPattern(grainCanvas, 'repeat');
+    } catch {
+      this.grainPattern = null;
+    }
   }
 
   private parseLines(displayName: string): string[] {
@@ -143,31 +196,73 @@ export class GuestNameTexture {
     });
 
     const blockLeftX = targetCenterX - maxNameWidth / 2;
-    // Shift the whole text area down by 20px
-    const namesStartY = targetCenterY - totalNamesHeight / 2 + 38;
+    // Shift the whole text area down by 10px
+    const namesStartY = targetCenterY - totalNamesHeight / 2 + 28;
 
-    // 1. "To.." or "প্রতি.." label
-    this.ctx.textAlign = 'left';
-    this.ctx.textBaseline = 'bottom';
+    // 1. Label setup ("To.." or "প্রতি..")
     const toFontSize = Math.round(fontSize * 0.44);
     const toLabel = isBengali ? 'প্রতি..' : 'To..';
     const toFont = isBengali
       ? `normal 600 ${toFontSize}px "Li Shobuj Nolua Unicode", "Li Shobuj Nolua", "Noto Serif Bengali", serif`
       : `normal 500 ${toFontSize}px "Cinzel", "Playfair Display", "Georgia", "Times New Roman", serif`;
-    this.ctx.font = toFont;
-    // Generous breathing space (gap) between "To.." and the first name
     const toY = namesStartY - fontSize * 0.84;
+
+    // PASS 1: Natural Ink Absorption Halo (Simulates liquid marker ink wicking slightly into cardstock fibers)
+    this.ctx.save();
+    this.ctx.fillStyle = '#8a2b34';
+    this.ctx.shadowColor = 'rgba(138, 43, 52, 0.45)';
+    this.ctx.shadowBlur = 4;
+
+    this.ctx.textAlign = 'left';
+    this.ctx.textBaseline = 'bottom';
+    this.ctx.font = toFont;
     this.ctx.fillText(toLabel, blockLeftX, toY);
 
-    // 2. Guest Names rendered below
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
     this.ctx.font = `600 ${fontSize}px ${handwritingFont}`;
-
     lines.forEach((line, index) => {
       const y = namesStartY + index * lineHeight;
       this.ctx.fillText(line, targetCenterX, y);
     });
+    this.ctx.restore();
+
+    // PASS 2: Liquid Felt-Tip Marker Core with Organic Pressure Depth
+    this.ctx.save();
+    const inkGrad = this.ctx.createLinearGradient(
+      0,
+      namesStartY - fontSize,
+      0,
+      namesStartY + totalNamesHeight + fontSize * 0.5
+    );
+    inkGrad.addColorStop(0, '#922e38');   // Delicate natural start of stroke
+    inkGrad.addColorStop(0.5, '#8a2b34'); // Core rich dark red ink
+    inkGrad.addColorStop(1, '#782028');   // Deeper pooled ink at bottom turns
+    this.ctx.fillStyle = inkGrad;
+
+    this.ctx.textAlign = 'left';
+    this.ctx.textBaseline = 'bottom';
+    this.ctx.font = toFont;
+    this.ctx.fillText(toLabel, blockLeftX, toY);
+
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    this.ctx.font = `600 ${fontSize}px ${handwritingFont}`;
+    lines.forEach((line, index) => {
+      const y = namesStartY + index * lineHeight;
+      this.ctx.fillText(line, targetCenterX, y);
+    });
+    this.ctx.restore();
+
+    // PASS 3: Porous Paper Tooth & Marker Fiber Grain Texture
+    // Stamped exclusively onto the ink glyphs via 'source-atop' without affecting transparency outside
+    if (this.grainPattern) {
+      this.ctx.save();
+      this.ctx.globalCompositeOperation = 'source-atop';
+      this.ctx.fillStyle = this.grainPattern;
+      this.ctx.fillRect(0, 0, width, height);
+      this.ctx.restore();
+    }
 
     this.ctx.restore();
 
