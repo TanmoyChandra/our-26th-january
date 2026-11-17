@@ -3,6 +3,22 @@
 @import '@fontsource/hind-siliguri/bengali.css';
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Li Shobuj Nolua Unicode';
+  src: url('/fonts/Li%20Shobuj%20Nolua%20Unicode.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Li Shobuj Nolua';
+  src: url('/fonts/Li%20Shobuj%20Nolua%20Unicode.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     /* Colour tokens — to be refined in design phase */

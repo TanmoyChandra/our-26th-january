@@ -38,20 +38,39 @@ export class GuestNameTexture {
     this.texture.minFilter = THREE.LinearMipmapLinearFilter;
     this.texture.magFilter = THREE.LinearFilter;
 
-    if (typeof document !== 'undefined' && document.fonts) {
-      Promise.all([
-        document.fonts.load('600 120px "Dancing Script"'),
-        document.fonts.load('600 120px "Caveat"'),
-        document.fonts.load('600 120px "Noto Serif Bengali"'),
-        document.fonts.load('600 120px "Hind Siliguri"'),
-        document.fonts.ready,
-      ])
-        .then(() => {
-          this.update(options);
-        })
-        .catch(() => {
-          this.update(options);
-        });
+    if (typeof document !== 'undefined') {
+      // Explicitly load the user's custom Bengali font for Canvas 2D
+      try {
+        const shobujFont = new FontFace(
+          'Li Shobuj Nolua Unicode',
+          'url("/fonts/Li%20Shobuj%20Nolua%20Unicode.ttf")'
+        );
+        shobujFont
+          .load()
+          .then((loaded) => {
+            document.fonts.add(loaded);
+            this.update(options);
+          })
+          .catch(() => {});
+      } catch {
+        // Fallback if FontFace constructor is unavailable
+      }
+
+      if (document.fonts) {
+        Promise.all([
+          document.fonts.load('600 120px "Dancing Script"'),
+          document.fonts.load('600 120px "Caveat"'),
+          document.fonts.load('600 120px "Li Shobuj Nolua Unicode"'),
+          document.fonts.load('600 120px "Noto Serif Bengali"'),
+          document.fonts.ready,
+        ])
+          .then(() => {
+            this.update(options);
+          })
+          .catch(() => {
+            this.update(options);
+          });
+      }
     }
 
     this.update(options);
@@ -102,9 +121,9 @@ export class GuestNameTexture {
       }
     }
 
-    // Natural handwriting script for English, elegant literary serif for Bengali
+    // Custom Li Shobuj Nolua font for Bengali envelope names, handwriting script for English
     const handwritingFont = isBengali
-      ? '"Noto Serif Bengali", "Hind Siliguri", serif'
+      ? '"Li Shobuj Nolua Unicode", "Li Shobuj Nolua", "Noto Serif Bengali", serif'
       : '"Dancing Script", "Caveat", "Marck Script", "Segoe Script", cursive';
     this.ctx.font = `600 ${fontSize}px ${handwritingFont}`;
 
@@ -129,7 +148,7 @@ export class GuestNameTexture {
     const toFontSize = Math.round(fontSize * 0.44);
     const toLabel = isBengali ? 'প্রতি..' : 'To..';
     const toFont = isBengali
-      ? `normal 600 ${toFontSize}px "Noto Serif Bengali", "Hind Siliguri", serif`
+      ? `normal 600 ${toFontSize}px "Li Shobuj Nolua Unicode", "Li Shobuj Nolua", "Noto Serif Bengali", serif`
       : `normal 500 ${toFontSize}px "Cinzel", "Playfair Display", "Georgia", "Times New Roman", serif`;
     this.ctx.font = toFont;
     // Generous breathing space (gap) between "To.." and the first name
